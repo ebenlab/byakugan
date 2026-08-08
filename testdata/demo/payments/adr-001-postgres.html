@@ -1,0 +1,7 @@
+<!doctype html><html><head><meta name="color-scheme" content="light dark"><title>ADR-001: Postgres as the ledger store</title></head>
+<body><h1>ADR-001: Postgres as the ledger store</h1>
+<p><strong>Status:</strong> Accepted · <strong>Date:</strong> 2026-08-01</p>
+<h2>Context</h2><p>The ledger needs serializable transactions and strong constraints.</p>
+<h2>Decision</h2><p>Use Postgres with SERIALIZABLE isolation for journal writes.</p>
+<h2>Consequences</h2><p>Simple operational story; revisit sharding at 10k TPS.</p>
+</body></html>

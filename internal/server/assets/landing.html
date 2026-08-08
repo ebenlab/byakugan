@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Byakugan</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%91%81%EF%B8%8F%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="/__byakugan/app.css">
+</head>
+<body class="bk-landing">
+<header class="bk-header">
+  <a class="bk-logo" href="/"><span class="bk-eye">👁️</span> Byakugan</a>
+  <input id="bk-search" class="bk-search" type="search"
+         placeholder="Search titles, headings, content…  ( / )" autocomplete="off">
+  <span class="bk-meta" id="bk-meta"></span>
+</header>
+<main class="bk-main">
+  <div id="bk-results" class="bk-results" hidden></div>
+  <div id="bk-projects" class="bk-projects"></div>
+  <p id="bk-empty" class="bk-empty" hidden>
+    No HTML documents found here yet. Point an agent at this folder and refresh —
+    or run <code>byakugan &lt;folder&gt;</code> on a folder that has some.
+  </p>
+</main>
+<script src="/__byakugan/search.js"></script>
+<script src="/__byakugan/app.js"></script>
+</body>
+</html>
