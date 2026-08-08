@@ -45,6 +45,7 @@ byakugan <subcommand>
 | `--host` | `127.0.0.1` | Interface to bind (`0.0.0.0` to expose on the network) |
 | `--open` | `false` | Open the default browser after starting |
 | `--no-watch` | `false` | Disable file watching and live reload |
+| `--no-update-check` | `false` | Disable the startup check for a newer release |
 | `--version` | | Print version and exit |
 
 ### Subcommands
@@ -56,6 +57,22 @@ byakugan <subcommand>
 | `style` | Print the shared doc stylesheet (`doc.css`) to stdout |
 | `rules` | Print the doc authoring guide for agents |
 | `template <kind>` | Print a doc generation prompt template — kinds: `prd`, `adr`, `architecture`, `overview` |
+| `upgrade` | Replace this binary with the latest GitHub release |
+
+### Upgrades
+
+On start, byakugan asynchronously checks GitHub Releases and prints a one-line
+notice when a newer version exists (never blocks startup; silent when offline;
+skipped for non-release builds). Opt out with `--no-update-check` or
+`BYAKUGAN_NO_UPDATE_CHECK=1`. To update:
+
+```bash
+byakugan upgrade
+```
+
+This downloads the archive for your OS/architecture, verifies its sha256
+against the release's `checksums.txt`, and atomically replaces the running
+binary. If byakugan came from a package manager, upgrade it there instead.
 
 `template` with a missing or unknown kind lists the available kinds on
 stderr and exits with status 2.
