@@ -1,33 +1,33 @@
 /* Byakugan UI — shared by the landing page and the injected overlay.
+   MONOCHROME edition of the current app.css: same selectors, same scoping,
+   same three-state theme machinery — palette reduced to black/white/grays.
    Theme variables are scoped to the Byakugan roots (.bk-landing, #bk-fab,
    #bk-drawer) — never :root — so the injected overlay can never recolor a
    host document. An explicit user choice, stored as data-bk-theme on <html>,
-   beats the OS scheme in both directions:
-     - [data-bk-theme="dark"]  forces dark even when the OS is light;
-     - [data-bk-theme="light"] is excluded from the dark media block. */
+   beats the OS scheme in both directions. */
 .bk-landing, #bk-fab, #bk-drawer {
   --bk-bg: #fafafa;
-  --bk-fg: #1a1a1f;
-  --bk-muted: #6b6b76;
+  --bk-fg: #111113;
+  --bk-muted: #6e6e74;
   --bk-card: #ffffff;
-  --bk-border: #e4e4ea;
-  --bk-accent: #7c5cff;
-  --bk-accent-soft: #f0ecff;
-  --bk-mark: #fff3bf;
-  --bk-shadow: 0 1px 3px rgba(20, 20, 40, .07), 0 8px 24px rgba(20, 20, 40, .06);
+  --bk-border: #e4e4e7;
+  --bk-accent: #111113;
+  --bk-accent-soft: #efeff1;
+  --bk-mark: #e4e4e7;
+  --bk-shadow: 0 1px 3px rgba(0, 0, 0, .06), 0 8px 24px rgba(0, 0, 0, .05);
   color-scheme: light;
 }
 :root[data-bk-theme="dark"] .bk-landing,
 :root[data-bk-theme="dark"] #bk-fab,
 :root[data-bk-theme="dark"] #bk-drawer {
-  --bk-bg: #101014;
-  --bk-fg: #ececf1;
-  --bk-muted: #9a9aa6;
-  --bk-card: #18181f;
-  --bk-border: #2a2a33;
-  --bk-accent: #a18bff;
-  --bk-accent-soft: #241f3d;
-  --bk-mark: #4d4320;
+  --bk-bg: #101012;
+  --bk-fg: #ededf0;
+  --bk-muted: #9a9aa2;
+  --bk-card: #18181b;
+  --bk-border: #2a2a2e;
+  --bk-accent: #ededf0;
+  --bk-accent-soft: #26262b;
+  --bk-mark: #3a3a40;
   --bk-shadow: 0 1px 3px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .3);
   color-scheme: dark;
 }
@@ -35,14 +35,14 @@
   :root:not([data-bk-theme="light"]) .bk-landing,
   :root:not([data-bk-theme="light"]) #bk-fab,
   :root:not([data-bk-theme="light"]) #bk-drawer {
-    --bk-bg: #101014;
-    --bk-fg: #ececf1;
-    --bk-muted: #9a9aa6;
-    --bk-card: #18181f;
-    --bk-border: #2a2a33;
-    --bk-accent: #a18bff;
-    --bk-accent-soft: #241f3d;
-    --bk-mark: #4d4320;
+    --bk-bg: #101012;
+    --bk-fg: #ededf0;
+    --bk-muted: #9a9aa2;
+    --bk-card: #18181b;
+    --bk-border: #2a2a2e;
+    --bk-accent: #ededf0;
+    --bk-accent-soft: #26262b;
+    --bk-mark: #3a3a40;
     --bk-shadow: 0 1px 3px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .3);
     color-scheme: dark;
   }
@@ -69,8 +69,10 @@
 .bk-logo {
   font-weight: 700; font-size: 17px; letter-spacing: -.02em;
   color: var(--bk-fg); text-decoration: none; white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 8px;
 }
-.bk-eye { filter: saturate(.4); }
+/* .bk-eye now wraps the inline SVG mark (currentColor) instead of the emoji. */
+.bk-eye svg { width: 22px; height: 22px; display: block; }
 .bk-search {
   flex: 1; max-width: 520px; box-sizing: border-box;
   padding: 8px 14px;
@@ -90,7 +92,7 @@
   font: 15px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   cursor: pointer; padding: 0;
 }
-.bk-theme-btn:hover { border-color: var(--bk-accent); color: var(--bk-accent); }
+.bk-theme-btn:hover { border-color: var(--bk-accent); }
 
 .bk-main { max-width: 1080px; margin: 0 auto; padding: 28px 24px 80px; }
 
@@ -111,7 +113,7 @@
   display: flex; align-items: baseline; gap: 8px;
 }
 .bk-card h2 a { color: var(--bk-fg); text-decoration: none; }
-.bk-card h2 a:hover { color: var(--bk-accent); }
+.bk-card h2 a:hover { text-decoration: underline; text-underline-offset: 3px; }
 .bk-count {
   margin-left: auto; flex: none;
   color: var(--bk-muted); font-size: 11.5px; font-weight: 600;
@@ -126,8 +128,8 @@
   color: var(--bk-muted); text-decoration: none; font-size: 13.5px;
   overflow: hidden; text-overflow: ellipsis;
 }
-.bk-card li a:hover { color: var(--bk-accent); background: var(--bk-accent-soft); }
-.bk-more { display: inline-block; margin-top: 6px; font-size: 12.5px; color: var(--bk-accent); }
+.bk-card li a:hover { color: var(--bk-fg); background: var(--bk-accent-soft); }
+.bk-more { display: inline-block; margin-top: 6px; font-size: 12.5px; color: var(--bk-muted); }
 
 .bk-results { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
 .bk-hit {
@@ -155,6 +157,7 @@
   cursor: pointer; user-select: none;
 }
 #bk-fab:hover { border-color: var(--bk-accent); }
+#bk-fab .bk-eye svg { width: 18px; height: 18px; }
 #bk-drawer {
   position: fixed; inset: 0 auto 0 0; z-index: 2147483001;
   width: min(360px, 92vw);
@@ -170,7 +173,11 @@
   display: flex; align-items: center; gap: 8px;
   padding: 12px 14px 12px 16px; border-bottom: 1px solid var(--bk-border);
 }
-.bk-drawer-head a { font-weight: 700; color: var(--bk-fg); text-decoration: none; margin-right: auto; }
+.bk-drawer-head a {
+  font-weight: 700; color: var(--bk-fg); text-decoration: none; margin-right: auto;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.bk-drawer-head .bk-eye svg { width: 20px; height: 20px; }
 .bk-drawer-close {
   flex: none; width: 34px; height: 34px;
   display: inline-flex; align-items: center; justify-content: center;
@@ -220,7 +227,7 @@
   color: var(--bk-fg); text-decoration: none;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.bk-drawer-foot a:hover { border-color: var(--bk-accent); color: var(--bk-accent); }
+.bk-drawer-foot a:hover { border-color: var(--bk-accent); }
 .bk-drawer-foot a[aria-disabled="true"] { opacity: .35; pointer-events: none; }
 
 /* ---- Phone widths: reflowed header, single-column cards, 44px targets ---- */
@@ -228,7 +235,6 @@
   .bk-header { flex-wrap: wrap; gap: 10px 12px; padding: 10px 16px; }
   .bk-logo { font-size: 16px; }
   .bk-meta { font-size: 12px; }
-  /* Search drops to its own full-width row below logo + meta + toggle. */
   .bk-search { order: 1; flex: 1 1 100%; max-width: none; min-height: 44px; }
   .bk-theme-btn { width: 44px; height: 44px; }
   .bk-main { padding: 20px 16px 110px; }

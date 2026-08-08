@@ -125,21 +125,23 @@ test.describe('theme toggle', () => {
     await page.goto('/overview.html');
     const hostBg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
     await page.locator('#bk-fab').click();
+    const drawerBg = () => page.locator('#bk-drawer')
+      .evaluate(el => getComputedStyle(el).backgroundColor);
     const btn = page.locator('#bk-drawer .bk-theme-btn');
     await btn.click(); // auto → light
+    const lightBg = await drawerBg();
     await btn.click(); // light → dark
     await expect(page.locator('html')).toHaveAttribute('data-bk-theme', 'dark');
-    // The drawer picks up the dark card color…
-    const drawerBg = await page.locator('#bk-drawer')
-      .evaluate(el => getComputedStyle(el).backgroundColor);
-    expect(drawerBg).toBe('rgb(24, 24, 31)');
+    // The drawer switches to the dark card color (palette-agnostic: it only
+    // has to differ from the light value)…
+    const darkBg = await drawerBg();
+    expect(darkBg).not.toBe(lightBg);
     // …while the host document's own styling is untouched.
     expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe(hostBg);
     // The choice persists and applies immediately on the next load.
     await page.reload();
     await expect(page.locator('html')).toHaveAttribute('data-bk-theme', 'dark');
-    expect(await page.locator('#bk-drawer')
-      .evaluate(el => getComputedStyle(el).backgroundColor)).toBe('rgb(24, 24, 31)');
+    expect(await drawerBg()).toBe(darkBg);
   });
 });
 

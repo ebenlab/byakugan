@@ -33,14 +33,14 @@
 
     var fab = document.createElement('button');
     fab.id = 'bk-fab';
-    fab.innerHTML = '<span class="bk-eye">👁️</span> Byakugan';
+    fab.innerHTML = '<span class="bk-eye"><svg viewBox="0 0 32 32" width="18" height="18" aria-hidden="true"><ellipse cx="16" cy="16" rx="14" ry="8.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="16" cy="16" r="4.5" fill="currentColor"/></svg></span> Byakugan';
     fab.title = 'Navigation and search (b)';
     document.body.appendChild(fab);
 
     var drawer = document.createElement('div');
     drawer.id = 'bk-drawer';
     drawer.innerHTML =
-      '<div class="bk-drawer-head"><a href="/"><span class="bk-eye">👁️</span> Byakugan</a>' +
+      '<div class="bk-drawer-head"><a href="/"><span class="bk-eye"><svg viewBox="0 0 32 32" width="20" height="20" aria-hidden="true"><ellipse cx="16" cy="16" rx="14" ry="8.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="16" cy="16" r="4.5" fill="currentColor"/></svg></span> Byakugan</a>' +
       '<button class="bk-theme-btn" type="button"></button>' +
       '<button class="bk-drawer-close" title="Close (Esc)">×</button></div>' +
       '<div class="bk-drawer-search"><input type="search" placeholder="Search docs…" autocomplete="off"></div>' +
