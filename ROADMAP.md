@@ -20,7 +20,17 @@ project tracker (Linear) as-is. Status reflects 2026-08-08.
 - [x] `byakugan template prd|adr|architecture|overview`: doc generation prompt templates
 - [x] README: CLI reference + "For agents" workflow
 - [x] Release pipeline: GoReleaser on `v*` tags
-- [ ] Tag and publish v0.1.0
+- [x] Tag and publish v0.1.0 (2026-08-08)
+
+## Shipped between milestones
+
+- [x] v0.2.0 — responsive mobile UI, navigation redesign, theme toggle,
+  agent-facing CLI (`style`/`rules`/`template`) (2026-08-08)
+- [x] Monochrome chrome + SVG mark + favicon route (design patch 003)
+- [x] Flat design pass (no shadows/elevation, chrome + docs)
+- [x] Back-button support (search state in `?q=`, history-integrated drawer)
+- [x] Upgrade support (startup update notice + `byakugan upgrade` self-update)
+- [x] Self-docs demo (byakugan documents itself in testdata/demo)
 
 ## Milestone 2 — v0.2.0: Navigation depth
 

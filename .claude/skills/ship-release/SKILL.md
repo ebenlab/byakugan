@@ -15,8 +15,8 @@ description: Cut a Byakugan release — pre-flight checks, tagging, and verifyin
 
 ## Version choice
 
-Semver, pre-1.0: breaking CLI/behavior change → bump minor; fixes and
-additive features → bump patch. Check the last tag with
+Semver, pre-1.0 (Go community convention): new features or breaking
+changes → bump minor; pure fixes → bump patch. Check the last tag with
 `git describe --tags --abbrev=0`.
 
 ## Cut it
