@@ -9,39 +9,74 @@
   var $projects = document.getElementById('bk-projects');
   var $empty = document.getElementById('bk-empty');
   var $meta = document.getElementById('bk-meta');
+  var $title = document.getElementById('bk-title');
+  var $lede = document.getElementById('bk-lede');
+  var $foot = document.getElementById('bk-foot');
 
   // "/payments/" -> "payments"; "/" -> null (show everything).
   var scope = decodeURIComponent(location.pathname).replace(/^\/|\/$/g, '') || null;
   var index = { projects: [] };
 
   function projectLabel(name) { return name === '' ? 'Top-level documents' : name; }
+  function plural(n, word) { return n + ' ' + word + (n === 1 ? '' : 's'); }
+
+  // "payments/adr-001-postgres.html" -> "adr-001-postgres" (the TOC ref).
+  function pageRef(p, projName) {
+    var ref = p.path;
+    if (projName && ref.indexOf(projName + '/') === 0) ref = ref.slice(projName.length + 1);
+    return ref.replace(/\.html?$/i, '');
+  }
 
   function render() {
-    var projects = index.projects || [];
+    var all = index.projects || [];
+    var projects = all;
     if (scope) {
-      projects = projects.filter(function (p) { return p.name === scope; });
+      projects = all.filter(function (p) { return p.name === scope; });
       document.title = scope + ' · Byakugan';
     }
+
+    // Document header: the folder (or project) is the sheet's title.
+    var rootName = (index.root || '').replace(/[\\/]+$/, '').split(/[\\/]/).pop();
+    $title.textContent = scope || rootName || 'Documents';
+    if (index.pageCount) {
+      var scopedPages = scope
+        ? projects.reduce(function (n, p) { return n + p.pages.length; }, 0)
+        : index.pageCount;
+      $lede.textContent = scope
+        ? plural(scopedPages, 'page') + ' in this project — indexed from ' +
+          (rootName || 'this folder') + ' and reloaded on change.'
+        : plural(index.pageCount, 'page') + ' across ' + plural(all.length, 'project') +
+          ', indexed straight from the folder and reloaded on change.';
+    }
     $meta.textContent = index.pageCount
-      ? index.pageCount + ' page' + (index.pageCount === 1 ? '' : 's') + ' · ' +
-        (index.projects || []).length + ' project' + (index.projects.length === 1 ? '' : 's')
+      ? plural(index.pageCount, 'page') + ' · ' + plural(all.length, 'project')
       : '';
+    if (index.root) {
+      var scanned = BK.timeAgo(index.generatedAt);
+      $foot.textContent = 'byakugan — ' + index.root +
+        (scanned ? ' · scanned ' + scanned : '') + ' · watching for changes';
+    }
+
     $projects.innerHTML = '';
     $empty.hidden = projects.length > 0;
 
     projects.forEach(function (proj) {
-      var card = document.createElement('div');
+      var card = document.createElement('section');
       card.className = 'bk-card';
       var shown = proj.pages.slice(0, 8);
       var ago = BK.timeAgo(proj.updatedAt);
       card.innerHTML =
         '<h2><a href="/' + encodeURI(proj.name) + (proj.name ? '/' : '') + '">' +
         BK.highlight(projectLabel(proj.name), '') + '</a>' +
-        '<span class="bk-count">' + proj.pages.length + ' page' + (proj.pages.length === 1 ? '' : 's') + '</span></h2>' +
+        '<span class="bk-count">' + plural(proj.pages.length, 'page') + '</span></h2>' +
         (ago ? '<div class="bk-card-updated">Updated ' + ago + '</div>' : '') +
-        '<ul>' + shown.map(function (p) {
-          return '<li><a href="/' + encodeURI(p.path) + '">' + BK.highlight(p.title, '') + '</a></li>';
-        }).join('') + '</ul>' +
+        '<ol class="bk-toc">' + shown.map(function (p) {
+          return '<li><a href="/' + encodeURI(p.path) + '">' +
+            '<span class="bk-toc-title">' + BK.highlight(p.title, '') + '</span>' +
+            '<i class="bk-leader"></i>' +
+            '<span class="bk-toc-ref">' + BK.highlight(pageRef(p, proj.name), '') + '</span>' +
+            '</a></li>';
+        }).join('') + '</ol>' +
         (proj.pages.length > shown.length
           ? '<span class="bk-more">+ ' + (proj.pages.length - shown.length) + ' more</span>' : '');
       $projects.appendChild(card);

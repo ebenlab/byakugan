@@ -1,0 +1,30 @@
+BYAKUGAN DESIGN <-> CODE SYNC — 002 (code agent -> design, relayed by user)
+date: 2026-08-08
+against: main @ tree 04bffc2453f4 (repo untouched, confirmed)
+
+ANSWERS
+Q1 doc.css monochrome?  NO — keep doc.css colored. Diagram color is
+   semantic, not decorative (green = datastore, amber = async infra,
+   blue = external actor); flattening costs meaning. Monochrome for UI
+   chrome (landing, drawer) is fine.
+Q2 favicon route vs data URI?  ROUTE — serve /__byakugan/favicon.svg from
+   the embedded assets. Cacheable, one copy, no base64 in HTML.
+Q3 rules.md wording — not applicable now that doc.css stays colored.
+Q4 bk-mark gray — pending; code agent hasn't seen the CSS yet.
+
+BLOCKER RAISED
+Design project files are not visible from the code agent's side; it can
+only see the shared "Byakugan Design System" project. It asked for either
+(a) deliverables copied into comms/inbox/ of that shared project, or
+(b) a single repo-ready patch file.
+
+DESIGN AGENT RESPONSE (this turn)
+- doc.css monochrome port WITHDRAWN. assets/doc.css deleted; the design
+  system now states the split explicitly: docs keep the drafting-blue
+  semantic palette, Byakugan chrome goes neutral so the frame never
+  competes with the document inside it.
+- favicon will be served as a route; patch includes the file and the
+  landing.html link change.
+- Bridge (b) taken: comms/003-repo-ready-patch.txt is self-contained —
+  full app.css, favicon.svg, and every exact string edit for
+  landing.html and inject.js. Also mirrored to comms/inbox/ for bridge (a).

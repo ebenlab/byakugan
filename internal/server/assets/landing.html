@@ -17,12 +17,18 @@
 </script>
 </head>
 <body class="bk-landing">
-<header class="bk-header">
-  <a class="bk-logo" href="/"><span class="bk-eye"><svg viewBox="0 0 32 32" width="22" height="22" aria-hidden="true"><ellipse cx="16" cy="16" rx="14" ry="8.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="16" cy="16" r="4.5" fill="currentColor"/></svg></span> Byakugan</a>
+<header class="bk-doc-head">
+  <p class="bk-kicker">
+    <a class="bk-logo" href="/"><span class="bk-eye"><svg viewBox="0 0 32 32" width="16" height="16" aria-hidden="true"><ellipse cx="16" cy="16" rx="14" ry="8.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="16" cy="16" r="4.5" fill="currentColor"/></svg></span> Byakugan</a>
+    <span aria-hidden="true">·</span>
+    <span>live index</span>
+    <span class="bk-meta" id="bk-meta"></span>
+    <button id="bk-theme" class="bk-theme-btn" type="button"></button>
+  </p>
+  <h1 class="bk-title" id="bk-title">Documents</h1>
+  <p class="bk-lede" id="bk-lede">Everything in this folder, indexed and watched live.</p>
   <input id="bk-search" class="bk-search" type="search"
-         placeholder="Search titles, headings, content…  ( / )" autocomplete="off">
-  <span class="bk-meta" id="bk-meta"></span>
-  <button id="bk-theme" class="bk-theme-btn" type="button"></button>
+         placeholder="Search titles, headings, content — press /" autocomplete="off">
 </header>
 <main class="bk-main">
   <div id="bk-results" class="bk-results" hidden></div>
@@ -32,6 +38,7 @@
     or run <code>byakugan &lt;folder&gt;</code> on a folder that has some.
   </p>
 </main>
+<footer class="bk-doc-foot" id="bk-foot">byakugan — live document index</footer>
 <script src="/__byakugan/search.js"></script>
 <script src="/__byakugan/app.js"></script>
 </body>

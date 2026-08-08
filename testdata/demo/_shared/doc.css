@@ -58,8 +58,33 @@
   --shadow: none;
   color-scheme: light dark;
 }
+/* Dark palette. It applies two ways, mirroring the Byakugan chrome's
+   three-state theme: an explicit viewer choice — data-bk-theme on <html>,
+   written by the Byakugan theme toggle — always wins; without one, the OS
+   scheme decides. Docs styled with this sheet therefore follow the same
+   toggle as the landing page and overlay. */
+:root[data-bk-theme="dark"] {
+  --paper: #15171b;
+  --card: #1c1f25;
+  --ink: #e6e3d8;
+  --muted: #96917f;
+  --line: #33363e;
+  --line-soft: #262932;
+  --accent: #7fa9f2;
+  --accent-soft: #1e2a42;
+  --ok: #6fbf8d;
+  --ok-soft: #1c3226;
+  --warn: #d9a05b;
+  --warn-soft: #38290f;
+  --risk: #e08573;
+  --risk-soft: #3c1f1a;
+  --grid-dot: #2e323b;
+  --shadow: none;
+  color-scheme: dark;
+}
+:root[data-bk-theme="light"] { color-scheme: light; }
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-bk-theme="light"]) {
     --paper: #15171b;
     --card: #1c1f25;
     --ink: #e6e3d8;
@@ -76,6 +101,7 @@
     --risk-soft: #3c1f1a;
     --grid-dot: #2e323b;
     --shadow: none;
+    color-scheme: dark;
   }
 }
 

@@ -25,6 +25,24 @@ specific doc kind with `byakugan template <kind>`.
   declares `color-scheme: light dark`; a page that does not link it must add
   `<meta name="color-scheme" content="light dark">` itself.
 
+## Reuse the design system — never restyle
+
+- The shared stylesheet is the whole design system: skeleton classes,
+  callouts, tables, plates, diagram grammar, and **light/dark theming**.
+  Reuse it. Do not write per-page `<style>` blocks for anything it already
+  covers, and do not copy rules out of it into a page.
+- Dark mode is three-state and comes free with `doc.css`: the OS scheme by
+  default, overridden by an explicit viewer choice the Byakugan theme toggle
+  stores as `data-bk-theme` on `<html>`. Pages never manage this themselves —
+  never set `data-bk-theme`, never add your own `prefers-color-scheme` blocks.
+- If a page truly needs a custom element, style it with the shared CSS
+  variables (`--paper`, `--card`, `--ink`, `--muted`, `--line`, `--line-soft`,
+  `--accent`, `--accent-soft`, `--ok`, `--warn`, `--risk`, and their `-soft`
+  tints) so it adapts to both themes automatically. Hard-coded hex colors are
+  a bug: they will be wrong in one of the two modes.
+- Never redefine the `:root` variables in a page — that desynchronizes it
+  from every other page in the dossier.
+
 ## Page skeleton
 
 ```html

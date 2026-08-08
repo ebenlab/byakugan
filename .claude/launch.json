@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "byakugan-demo",
+      "runtimeExecutable": "go",
+      "runtimeArgs": ["run", ".", "--no-update-check", "testdata/demo"],
+      "port": 4664
+    }
+  ]
+}

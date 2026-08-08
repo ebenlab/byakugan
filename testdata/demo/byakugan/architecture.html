@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Byakugan Architecture</title>
+<link rel="stylesheet" href="../_shared/doc.css">
+</head>
+<body class="doc">
+
+<header class="doc-head">
+  <p class="kicker">byakugan · architecture · <span class="badge badge--accepted">current</span> · 2026-08-08</p>
+  <h1>Byakugan Architecture</h1>
+  <p class="lede">One static Go binary that turns a folder of agent-written HTML
+  into a navigable, searchable, live-reloading site — this page is served by the
+  system it describes.</p>
+</header>
+
+<main>
+<section>
+  <h2>Context</h2>
+  <p>Coding agents generate architecture docs, ADRs, and PRDs as they work.
+  Those files pile up in a folder and go unread because nothing presents them.
+  Byakugan is the missing presenter: point it at the folder and every
+  subfolder becomes a project, every HTML file a page, everything indexed for
+  instant search. It is built for exactly one use case and refuses to grow
+  into a CMS, wiki, or static-site generator.</p>
+  <p>Two constraints shape every decision below: <strong>zero configuration</strong>
+  (<code>byakugan &lt;folder&gt;</code> must always work) and <strong>zero
+  dependencies at the edge</strong> — no build step, no CDN, no database, one
+  executable you can <code>scp</code> anywhere.</p>
+</section>
+
+<section>
+  <h2>System overview</h2>
+  <p>Five small Go packages sit between two actors: the agent (or engineer)
+  writing HTML into the docs folder, and the browser reading it. The whole
+  runtime is ~1,100 lines of Go plus three embedded UI assets. This page maps
+  the shape; <a href="internals.html">Byakugan Internals</a> traces the same
+  system at code level, file by file.</p>
+
+  <figure class="plate">
+    <svg class="diagram" viewBox="0 0 780 400" role="img" aria-label="Byakugan component diagram">
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 0L10 5L0 10z" class="d-arrhead"/>
+        </marker>
+      </defs>
+
+      <rect class="d-lane" x="230" y="16" width="330" height="368" rx="10"/>
+      <text class="d-label" x="250" y="38">byakugan — one static binary</text>
+
+      <rect class="d-actor" x="20" y="60" width="130" height="60" rx="8"/>
+      <text class="d-title" x="85" y="86">Agent / editor</text>
+      <text class="d-sub" x="85" y="102">writes HTML</text>
+
+      <rect class="d-store" x="20" y="250" width="150" height="64" rx="10"/>
+      <text class="d-title" x="95" y="276">docs folder</text>
+      <text class="d-sub" x="95" y="292">*.html · _shared/doc.css</text>
+
+      <rect class="d-box" x="260" y="60" width="120" height="56" rx="8"/>
+      <text class="d-title" x="320" y="84">Watcher</text>
+      <text class="d-sub" x="320" y="100">fsnotify · 300 ms</text>
+
+      <rect class="d-box" x="420" y="60" width="120" height="56" rx="8"/>
+      <text class="d-title" x="480" y="84">Index</text>
+      <text class="d-sub" x="480" y="100">titles · headings · text</text>
+
+      <rect class="d-box" x="330" y="180" width="140" height="60" rx="8"/>
+      <text class="d-title" x="400" y="206">HTTP server</text>
+      <text class="d-sub" x="400" y="222">mux · SSE · inject</text>
+
+      <rect class="d-box" x="330" y="300" width="140" height="56" rx="8"/>
+      <text class="d-title" x="400" y="324">Embedded UI</text>
+      <text class="d-sub" x="400" y="340">landing · overlay · css</text>
+
+      <rect class="d-actor" x="620" y="180" width="140" height="60" rx="8"/>
+      <text class="d-title" x="690" y="206">Browser</text>
+      <text class="d-sub" x="690" y="222">index sheet + docs</text>
+
+      <line class="d-flow" x1="85" y1="120" x2="85" y2="244" marker-end="url(#arr)"/>
+      <text class="d-label" x="95" y="180">writes</text>
+
+      <line class="d-async" x1="170" y1="262" x2="254" y2="100" marker-end="url(#arr)"/>
+      <text class="d-label" x="150" y="170">fs events</text>
+
+      <line class="d-flow" x1="380" y1="88" x2="414" y2="88" marker-end="url(#arr)"/>
+
+      <line class="d-flow" x1="465" y1="116" x2="415" y2="174" marker-end="url(#arr)"/>
+      <text class="d-label" x="470" y="150">snapshot</text>
+
+      <line class="d-flow" x1="400" y1="300" x2="400" y2="246" marker-end="url(#arr)"/>
+
+      <line class="d-flow" x1="170" y1="290" x2="324" y2="222" marker-end="url(#arr)"/>
+      <text class="d-label" x="200" y="310">read on request</text>
+
+      <line class="d-flow" x1="620" y1="196" x2="476" y2="196" marker-end="url(#arr)"/>
+      <text class="d-label" x="492" y="188">GET / · /api/index.json</text>
+
+      <line class="d-async" x1="476" y1="228" x2="614" y2="228" marker-end="url(#arr)"/>
+      <text class="d-label" x="502" y="244">SSE: reload</text>
+    </svg>
+    <figcaption><b>Fig 1</b> — the binary owns three loops: watch, index, serve.
+    The docs folder stays the single source of truth; nothing is copied.</figcaption>
+  </figure>
+
+  <table>
+    <thead><tr><th>Package</th><th>Role</th><th>Key decision</th></tr></thead>
+    <tbody>
+      <tr><td><code>main</code></td><td>CLI: flags, subcommands, wiring</td><td>flags for serving, subcommands for everything else</td></tr>
+      <tr><td><code>internal/server</code></td><td>routes, SSE fan-out, overlay injection</td><td>stdlib <code>net/http</code> only</td></tr>
+      <tr><td><code>internal/index</code></td><td>scan, extract, snapshot</td><td>immutable snapshots swapped atomically</td></tr>
+      <tr><td><code>internal/watcher</code></td><td>recursive fs watching</td><td>300 ms debounce: a burst re-indexes once</td></tr>
+      <tr><td><code>internal/agentkit</code></td><td><code>style</code> · <code>rules</code> · <code>template</code> assets</td><td>the design system ships inside the binary</td></tr>
+      <tr><td><code>internal/selfupdate</code></td><td>release check + <code>upgrade</code></td><td>non-blocking notice, never auto-installs</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2>The serving pipeline</h2>
+  <p>Four routes cover everything. <code>/api/index.json</code> returns the
+  current snapshot; <code>/events</code> holds an SSE stream open;
+  <code>/__byakugan/*</code> serves the embedded UI; and <code>/</code> is the
+  catch-all page handler shown below.</p>
+
+  <figure class="plate">
+    <svg class="diagram" viewBox="0 0 780 250" role="img" aria-label="Request pipeline for a document page">
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 0L10 5L0 10z" class="d-arrhead"/>
+        </marker>
+      </defs>
+
+      <rect class="d-actor" x="20" y="60" width="128" height="56" rx="8"/>
+      <text class="d-title" x="84" y="84">GET request</text>
+      <text class="d-sub" x="84" y="100">/byakugan/internals.html</text>
+
+      <rect class="d-box" x="188" y="60" width="128" height="56" rx="8"/>
+      <text class="d-title" x="252" y="84">Guard</text>
+      <text class="d-sub" x="252" y="100">path.Clean · no “..”</text>
+
+      <rect class="d-box" x="356" y="60" width="128" height="56" rx="8"/>
+      <text class="d-title" x="420" y="84">Resolve</text>
+      <text class="d-sub" x="420" y="100">stat under root</text>
+
+      <rect class="d-box" x="524" y="60" width="128" height="56" rx="8"/>
+      <text class="d-title" x="588" y="84">Inject</text>
+      <text class="d-sub" x="588" y="100">&lt;/body&gt; ← inject.js</text>
+
+      <circle class="d-num" cx="168" cy="70" r="9"/><text class="d-numtext" x="168" y="73">1</text>
+      <circle class="d-num" cx="336" cy="70" r="9"/><text class="d-numtext" x="336" y="73">2</text>
+      <circle class="d-num" cx="504" cy="70" r="9"/><text class="d-numtext" x="504" y="73">3</text>
+
+      <line class="d-flow" x1="148" y1="88" x2="182" y2="88" marker-end="url(#arr)"/>
+      <line class="d-flow" x1="316" y1="88" x2="350" y2="88" marker-end="url(#arr)"/>
+      <line class="d-flow" x1="484" y1="88" x2="518" y2="88" marker-end="url(#arr)"/>
+
+      <line class="d-flow" x1="588" y1="116" x2="588" y2="160" marker-end="url(#arr)"/>
+      <rect class="d-box" x="524" y="166" width="128" height="48" rx="8"/>
+      <text class="d-title" x="588" y="186">Response</text>
+      <text class="d-sub" x="588" y="200">Cache-Control: no-store</text>
+
+      <text class="d-label" x="24" y="160">branches from Resolve:</text>
+      <text class="d-label" x="24" y="180">“/” or bare directory → embedded landing (scopes itself from the URL)</text>
+      <text class="d-label" x="24" y="200">directory with index.html → that file, injected</text>
+      <text class="d-label" x="24" y="220">non-HTML file → http.ServeFile, untouched</text>
+    </svg>
+    <figcaption><b>Fig 2</b> — every HTML page leaves the server with one extra
+    line: a deferred script tag that renders the overlay. The file on disk is
+    never modified.</figcaption>
+  </figure>
+
+  <div class="callout">
+    <strong>Injection contract</strong>
+    <p>The overlay snippet is inserted before the last <code>&lt;/body&gt;</code>
+    (or appended if none exists). Its CSS variables are scoped to
+    <code>#bk-fab</code> and <code>#bk-drawer</code> — never <code>:root</code> —
+    so the overlay can restyle itself but structurally cannot recolor the
+    document it frames. Theming flows the other way by opt-in: the shared
+    <code>doc.css</code> honors the same <code>data-bk-theme</code> state the
+    toggle writes, so documents flip light/dark with the chrome without the
+    overlay touching them.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Index and search</h2>
+  <p>On start (and on every settled change) the index walks the root, parses
+  each HTML file, and extracts the <code>&lt;title&gt;</code>, the headings,
+  and the first 2,000 characters of visible text. The result is an immutable
+  snapshot swapped in atomically — readers never lock against the scanner.</p>
+  <p>Search runs <em>in the browser</em>: the full snapshot ships as one JSON
+  payload and <code>search.js</code> ranks matches as you type. For the
+  hundreds-of-pages corpora Byakugan targets, that is faster than any
+  round-trip and keeps the server free of query logic. The landing page and
+  the overlay drawer share the same index and the same ranking.</p>
+</section>
+
+<section>
+  <h2>Live reload</h2>
+  <p>An agent regenerating a docs folder writes dozens of files in a burst.
+  The watcher turns that burst into exactly one rebuild and one browser
+  reload.</p>
+
+  <figure class="plate">
+    <svg class="diagram" viewBox="0 0 780 300" role="img" aria-label="Live reload sequence">
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 0L10 5L0 10z" class="d-arrhead"/>
+        </marker>
+      </defs>
+
+      <rect class="d-actor" x="30" y="20" width="100" height="40" rx="8"/>
+      <text class="d-title" x="80" y="45">Agent</text>
+      <rect class="d-store" x="190" y="20" width="100" height="40" rx="10"/>
+      <text class="d-title" x="240" y="45">docs/</text>
+      <rect class="d-box" x="350" y="20" width="100" height="40" rx="8"/>
+      <text class="d-title" x="400" y="45">Watcher</text>
+      <rect class="d-box" x="510" y="20" width="100" height="40" rx="8"/>
+      <text class="d-title" x="560" y="45">Server</text>
+      <rect class="d-actor" x="660" y="20" width="100" height="40" rx="8"/>
+      <text class="d-title" x="710" y="45">Browser</text>
+
+      <line class="d-life" x1="80" y1="60" x2="80" y2="280"/>
+      <line class="d-life" x1="240" y1="60" x2="240" y2="280"/>
+      <line class="d-life" x1="400" y1="60" x2="400" y2="280"/>
+      <line class="d-life" x1="560" y1="60" x2="560" y2="280"/>
+      <line class="d-life" x1="710" y1="60" x2="710" y2="280"/>
+
+      <line class="d-flow" x1="80" y1="90" x2="234" y2="90" marker-end="url(#arr)"/>
+      <text class="d-label" x="110" y="82">save × N (burst)</text>
+      <circle class="d-num" cx="95" cy="90" r="9"/><text class="d-numtext" x="95" y="93">1</text>
+
+      <line class="d-async" x1="240" y1="120" x2="394" y2="120" marker-end="url(#arr)"/>
+      <text class="d-label" x="264" y="112">fsnotify events</text>
+      <circle class="d-num" cx="255" cy="120" r="9"/><text class="d-numtext" x="255" y="123">2</text>
+
+      <text class="d-label" x="412" y="152">quiet for 300 ms → fire once</text>
+      <circle class="d-num" cx="400" cy="148" r="9"/><text class="d-numtext" x="400" y="151">3</text>
+
+      <line class="d-flow" x1="400" y1="180" x2="554" y2="180" marker-end="url(#arr)"/>
+      <text class="d-label" x="420" y="172">Rebuild() · Broadcast(reload)</text>
+      <circle class="d-num" cx="415" cy="180" r="9"/><text class="d-numtext" x="415" y="183">4</text>
+
+      <line class="d-async" x1="560" y1="210" x2="704" y2="210" marker-end="url(#arr)"/>
+      <text class="d-label" x="588" y="202">event: reload</text>
+      <circle class="d-num" cx="575" cy="210" r="9"/><text class="d-numtext" x="575" y="213">5</text>
+
+      <line class="d-flow" x1="710" y1="240" x2="566" y2="240" marker-end="url(#arr)"/>
+      <text class="d-label" x="592" y="258">GET / — fresh snapshot</text>
+    </svg>
+    <figcaption><b>Fig 3</b> — slow SSE subscribers are dropped rather than
+    allowed to block the watcher; a reconnecting browser just reloads.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <h2>Two design languages</h2>
+  <p>Everything the user sees follows one settled rule with two voices:</p>
+  <ul>
+    <li><strong>Documents are “blueprint editorial”</strong> — warm paper, ink
+    serif, drafting-blue accent, semantic diagram colors. The landing page
+    joined this family deliberately: it renders as the dossier’s index sheet
+    (numbered sections, TOC dot leaders, provenance footer) because the index
+    <em>is</em> a document.</li>
+    <li><strong>Chrome is monochrome</strong> — the injected overlay (floating
+    button and drawer) frames other people’s pages, so it stays neutral
+    black/white/gray and never competes with the document behind it.</li>
+  </ul>
+  <p>The design system itself ships in the binary as the agent kit:
+  <code>byakugan style</code> prints the shared stylesheet,
+  <code>byakugan rules</code> the authoring guide, and
+  <code>byakugan template prd|adr|architecture|overview</code> a ready-to-paste
+  generation prompt — so any agent can produce pages that belong here, this
+  one included.</p>
+</section>
+
+<section>
+  <h2>Distribution and upgrades</h2>
+  <p>The three UI assets and the agent kit are embedded with
+  <code>go:embed</code>, so a release is a single file per platform, built and
+  published by goreleaser on every tag. At startup the server checks the
+  latest release in the background — silent when offline or current, one log
+  line when newer (<code>--no-update-check</code> opts out). Upgrading is
+  explicit: <code>byakugan upgrade</code> downloads the matching artifact and
+  replaces the running executable in place.</p>
+
+  <div class="callout callout--decision">
+    <strong>Decision</strong>
+    <p>Stdlib first, one binary, no build step, no external assets. Every
+    feature must survive <code>scp byakugan somewhere &amp;&amp; ./byakugan docs</code>
+    on a machine with nothing else installed.</p>
+  </div>
+
+  <div class="callout callout--risk">
+    <strong>Risk / revisit</strong>
+    <p>The snapshot ships each page’s extracted text (capped at 2,000 chars) to
+    the browser. Beyond a few thousand pages the payload will be felt on page
+    load; the escape hatch is server-side search behind the same
+    <code>/api</code> shape. Not needed at today’s target scale.</p>
+  </div>
+</section>
+</main>
+
+<footer class="doc-foot">byakugan · architecture · served by the system it describes · style: ../_shared/doc.css</footer>
+</body>
+</html>

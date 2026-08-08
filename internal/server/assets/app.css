@@ -1,11 +1,64 @@
 /* Byakugan UI — shared by the landing page and the injected overlay.
-   MONOCHROME edition of the current app.css: same selectors, same scoping,
-   same three-state theme machinery — palette reduced to black/white/grays.
-   Theme variables are scoped to the Byakugan roots (.bk-landing, #bk-fab,
-   #bk-drawer) — never :root — so the injected overlay can never recolor a
-   host document. An explicit user choice, stored as data-bk-theme on <html>,
-   beats the OS scheme in both directions. */
-.bk-landing, #bk-fab, #bk-drawer {
+   Two voices, one binary:
+
+   THE LANDING is a document. It borrows the doc design system's
+   "blueprint editorial" language (paper, ink serif, drafting-blue accent,
+   mono kickers, numbered sections, TOC dot leaders) because the index is
+   itself the master sheet of the dossier — not an app looking at one.
+
+   THE OVERLAY (#bk-fab, #bk-drawer) stays monochrome chrome: it is
+   injected INTO documents and must never compete with the page it frames.
+
+   Theme variables are scoped to the Byakugan roots — never :root — so the
+   injected overlay can never recolor a host document. An explicit user
+   choice, stored as data-bk-theme on <html>, beats the OS scheme in both
+   directions. */
+
+/* ---- Landing palette: blueprint editorial (mirrors doc.css) ---- */
+.bk-landing {
+  --bk-bg: #f6f4ee;
+  --bk-fg: #232019;
+  --bk-muted: #6f6a5c;
+  --bk-card: #fdfcf8;
+  --bk-border: #d8d3c4;
+  --bk-border-soft: #e7e3d7;
+  --bk-accent: #1d5cc4;
+  --bk-accent-soft: #e5edfb;
+  --bk-mark: #e5edfb;
+  --bk-grid-dot: #e3dfd2;
+  color-scheme: light;
+}
+:root[data-bk-theme="dark"] .bk-landing {
+  --bk-bg: #15171b;
+  --bk-fg: #e6e3d8;
+  --bk-muted: #96917f;
+  --bk-card: #1c1f25;
+  --bk-border: #33363e;
+  --bk-border-soft: #262932;
+  --bk-accent: #7fa9f2;
+  --bk-accent-soft: #1e2a42;
+  --bk-mark: #1e2a42;
+  --bk-grid-dot: #23262d;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-bk-theme="light"]) .bk-landing {
+    --bk-bg: #15171b;
+    --bk-fg: #e6e3d8;
+    --bk-muted: #96917f;
+    --bk-card: #1c1f25;
+    --bk-border: #33363e;
+    --bk-border-soft: #262932;
+    --bk-accent: #7fa9f2;
+    --bk-accent-soft: #1e2a42;
+    --bk-mark: #1e2a42;
+    --bk-grid-dot: #23262d;
+    color-scheme: dark;
+  }
+}
+
+/* ---- Overlay palette: monochrome chrome (unchanged) ---- */
+#bk-fab, #bk-drawer {
   --bk-bg: #fafafa;
   --bk-fg: #111113;
   --bk-muted: #6e6e74;
@@ -17,7 +70,6 @@
   --bk-shadow: none;
   color-scheme: light;
 }
-:root[data-bk-theme="dark"] .bk-landing,
 :root[data-bk-theme="dark"] #bk-fab,
 :root[data-bk-theme="dark"] #bk-drawer {
   --bk-bg: #101012;
@@ -32,7 +84,6 @@
   color-scheme: dark;
 }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-bk-theme="light"]) .bk-landing,
   :root:not([data-bk-theme="light"]) #bk-fab,
   :root:not([data-bk-theme="light"]) #bk-drawer {
     --bk-bg: #101012;
@@ -52,98 +103,223 @@
    Scoped to the landing page so it can never affect a host document. */
 .bk-landing [hidden] { display: none !important; }
 
+/* ============================================================
+   The landing: an index sheet on drafting paper
+   ============================================================ */
 .bk-landing {
   margin: 0;
   background: var(--bk-bg);
+  background-image: radial-gradient(var(--bk-grid-dot) 1px, transparent 1px);
+  background-size: 26px 26px;
   color: var(--bk-fg);
-  font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font: 17px/1.65 "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  padding: 0 24px 48px;
 }
-.bk-header {
-  position: sticky; top: 0; z-index: 10;
-  display: flex; align-items: center; gap: 16px;
-  padding: 14px 24px;
-  background: color-mix(in srgb, var(--bk-bg) 85%, transparent);
-  backdrop-filter: blur(8px);
-  border-bottom: 1px solid var(--bk-border);
+.bk-doc-head, .bk-main, .bk-doc-foot { max-width: 700px; margin-inline: auto; }
+
+/* ---- document header ---- */
+.bk-doc-head { padding-top: 56px; }
+.bk-kicker {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+  margin: 0 0 18px;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--bk-muted);
+}
+.bk-kicker::before {
+  content: "";
+  width: 34px; height: 1px;
+  background: var(--bk-accent);
+  display: inline-block;
 }
 .bk-logo {
-  font-weight: 700; font-size: 17px; letter-spacing: -.02em;
   color: var(--bk-fg); text-decoration: none; white-space: nowrap;
   display: inline-flex; align-items: center; gap: 8px;
+  font-weight: 700;
 }
-/* .bk-eye now wraps the inline SVG mark (currentColor) instead of the emoji. */
-.bk-eye svg { width: 22px; height: 22px; display: block; }
-.bk-search {
-  flex: 1; max-width: 520px; box-sizing: border-box;
-  padding: 8px 14px;
-  border: 1px solid var(--bk-border); border-radius: 8px;
-  background: var(--bk-card); color: var(--bk-fg);
-  font: inherit; outline: none;
-}
-.bk-search:focus { border-color: var(--bk-accent); }
-.bk-meta { color: var(--bk-muted); font-size: 13px; margin-left: auto; white-space: nowrap; }
+.bk-eye svg { width: 16px; height: 16px; display: block; }
+.bk-meta { margin-left: auto; white-space: nowrap; letter-spacing: .08em; text-transform: none; }
 
-/* Three-state theme toggle (auto → light → dark), landing header + drawer. */
 .bk-theme-btn {
-  flex: none; width: 34px; height: 34px;
+  flex: none; width: 30px; height: 30px;
   display: inline-flex; align-items: center; justify-content: center;
-  border: 1px solid var(--bk-border); border-radius: 8px;
-  background: var(--bk-card); color: var(--bk-fg);
-  font: 15px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  border: 1px solid var(--bk-border); border-radius: 6px;
+  background: transparent; color: var(--bk-fg);
+  font: 14px/1 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   cursor: pointer; padding: 0;
 }
-.bk-theme-btn:hover { border-color: var(--bk-accent); }
+.bk-theme-btn:hover { border-color: var(--bk-accent); color: var(--bk-accent); }
 
-.bk-main { max-width: 1080px; margin: 0 auto; padding: 28px 24px 80px; }
+.bk-title {
+  font-size: clamp(30px, 5vw, 42px);
+  line-height: 1.12;
+  letter-spacing: -.015em;
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+.bk-lede {
+  font-size: 19px;
+  line-height: 1.5;
+  color: var(--bk-muted);
+  font-style: italic;
+  margin: 0 0 8px;
+}
 
-.bk-projects {
-  display: grid; gap: 16px;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+/* Search as a drafting-table field: a ruled line, not a pill. */
+.bk-search {
+  width: 100%; box-sizing: border-box;
+  margin-top: 22px;
+  padding: 10px 2px 12px;
+  border: 0; border-bottom: 1px solid var(--bk-border);
+  background: transparent; color: var(--bk-fg);
+  font: 17px/1.4 "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  outline: none;
+  border-radius: 0;
 }
-.bk-card {
-  background: var(--bk-card);
-  border: 1px solid var(--bk-border); border-radius: 12px;
-  box-shadow: var(--bk-shadow);
-  padding: 18px 20px;
-  transition: border-color .12s ease;
+.bk-search::placeholder {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--bk-muted);
 }
-.bk-card:hover { border-color: var(--bk-accent); }
+.bk-search:focus { border-bottom-color: var(--bk-accent); box-shadow: 0 1px 0 var(--bk-accent); }
+.bk-doc-head::after {
+  content: "";
+  display: block;
+  border-bottom: 1px solid var(--bk-border);
+  margin-top: 26px;
+}
+
+/* ---- numbered project sections with TOC dot leaders ---- */
+.bk-main { padding-top: 4px; }
+.bk-projects { counter-reset: sec; }
+.bk-card { padding: 34px 0 6px; }
+.bk-card + .bk-card { border-top: 1px solid var(--bk-border-soft); }
 .bk-card h2 {
-  margin: 0; font-size: 16px; letter-spacing: -.01em;
-  display: flex; align-items: baseline; gap: 8px;
+  counter-increment: sec;
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -.01em;
+  display: flex; align-items: baseline; gap: 14px;
+}
+.bk-card h2::before {
+  content: counter(sec, decimal-leading-zero);
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 13px;
+  color: var(--bk-accent);
+  letter-spacing: .08em;
 }
 .bk-card h2 a { color: var(--bk-fg); text-decoration: none; }
-.bk-card h2 a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.bk-card h2 a:hover { color: var(--bk-accent); }
 .bk-count {
   margin-left: auto; flex: none;
-  color: var(--bk-muted); font-size: 11.5px; font-weight: 600;
-  border: 1px solid var(--bk-border); border-radius: 999px;
-  padding: 1px 8px; white-space: nowrap;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 11px; font-weight: 400;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--bk-muted);
+  white-space: nowrap;
 }
-.bk-card-updated { color: var(--bk-muted); font-size: 12px; margin-top: 3px; }
-.bk-card ul { list-style: none; margin: 10px 0 0; padding: 0; }
-.bk-card li { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.bk-card li a {
-  display: block; padding: 4px 8px; margin: 0 -8px; border-radius: 6px;
-  color: var(--bk-muted); text-decoration: none; font-size: 13.5px;
-  overflow: hidden; text-overflow: ellipsis;
+.bk-card-updated {
+  margin: 2px 0 0 calc(13px + 14px); /* align under the title, past the counter */
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 11.5px; letter-spacing: .06em;
+  color: var(--bk-muted);
 }
-.bk-card li a:hover { color: var(--bk-fg); background: var(--bk-accent-soft); }
-.bk-more { display: inline-block; margin-top: 6px; font-size: 12.5px; color: var(--bk-muted); }
+.bk-toc { list-style: none; margin: 14px 0 0; padding: 0; }
+.bk-toc li { margin: 0; }
+.bk-toc a {
+  display: flex; align-items: baseline; gap: 10px;
+  padding: 6px 4px; margin: 0 -4px;
+  color: var(--bk-fg); text-decoration: none;
+  border-radius: 4px;
+}
+.bk-toc-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bk-leader {
+  flex: 1; min-width: 28px;
+  border-bottom: 1px dotted var(--bk-border);
+  transform: translateY(-4px);
+}
+.bk-toc-ref {
+  flex: none;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12px; color: var(--bk-muted);
+  max-width: 40%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.bk-toc a:hover { background: var(--bk-accent-soft); }
+.bk-toc a:hover .bk-toc-title { color: var(--bk-accent); }
+.bk-toc a:hover .bk-leader { border-bottom-color: var(--bk-accent); }
+.bk-more {
+  display: inline-block; margin: 6px 0 0;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--bk-muted);
+}
 
-.bk-results { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+/* ---- search results as index entries ---- */
+.bk-results { margin: 26px 0 8px; }
 .bk-hit {
   display: block; text-decoration: none; color: var(--bk-fg);
-  background: var(--bk-card); border: 1px solid var(--bk-border);
-  border-radius: 10px; padding: 12px 16px;
+  padding: 14px 12px 14px 14px;
+  border-bottom: 1px solid var(--bk-border-soft);
+  border-radius: 0;
 }
-.bk-hit:hover, .bk-hit.bk-active { border-color: var(--bk-accent); background: var(--bk-accent-soft); }
-.bk-hit-title { font-weight: 600; font-size: 14.5px; }
-.bk-hit-path { color: var(--bk-muted); font-size: 12.5px; margin-top: 2px; }
-.bk-hit-snippet { color: var(--bk-muted); font-size: 13px; margin-top: 6px; }
+.bk-hit:first-child { border-top: 1px solid var(--bk-border-soft); }
+.bk-hit:hover, .bk-hit.bk-active {
+  background: var(--bk-card);
+  box-shadow: inset 3px 0 0 var(--bk-accent);
+}
+.bk-hit-title { font-weight: 600; font-size: 17px; }
+.bk-hit-path {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 11.5px; letter-spacing: .04em;
+  color: var(--bk-accent); margin-top: 3px;
+}
+.bk-hit-snippet { color: var(--bk-muted); font-size: 14.5px; margin-top: 6px; }
 .bk-hit mark { background: var(--bk-mark); color: inherit; border-radius: 2px; padding: 0 1px; }
-.bk-empty { color: var(--bk-muted); text-align: center; margin-top: 80px; }
-.bk-empty code { background: var(--bk-card); border: 1px solid var(--bk-border); border-radius: 5px; padding: 2px 6px; }
+
+/* ---- empty state as a callout ---- */
+.bk-empty {
+  margin: 48px auto 0;
+  border: 1px solid var(--bk-border);
+  border-left: 3px solid var(--bk-accent);
+  border-radius: 0 8px 8px 0;
+  background: var(--bk-card);
+  padding: 16px 20px;
+  color: var(--bk-muted);
+  font-style: italic;
+}
+.bk-empty code {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-style: normal; font-size: .82em;
+  background: var(--bk-border-soft);
+  border-radius: 4px; padding: .12em .38em;
+}
+
+/* ---- provenance footer ---- */
+.bk-doc-foot {
+  margin-top: 64px;
+  border-top: 1px solid var(--bk-border);
+  padding-top: 14px;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12.5px;
+  color: var(--bk-muted);
+  overflow-wrap: anywhere;
+}
+
+/* One quiet load moment: the sheet settles into place. */
+@media (prefers-reduced-motion: no-preference) {
+  .bk-doc-head, .bk-main, .bk-doc-foot {
+    animation: bk-settle .5s ease both;
+  }
+  .bk-main { animation-delay: .08s; }
+  .bk-doc-foot { animation-delay: .16s; }
+  @keyframes bk-settle {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: none; }
+  }
+}
 
 /* ---- Injected overlay (floating button + drawer on doc pages) ---- */
 #bk-fab {
@@ -157,7 +333,7 @@
   cursor: pointer; user-select: none;
 }
 #bk-fab:hover { border-color: var(--bk-accent); }
-#bk-fab .bk-eye svg { width: 18px; height: 18px; }
+#bk-fab .bk-eye svg { width: 18px; height: 18px; display: block; }
 #bk-drawer {
   position: fixed; inset: 0 auto 0 0; z-index: 2147483001;
   width: min(360px, 92vw);
@@ -177,7 +353,7 @@
   font-weight: 700; color: var(--bk-fg); text-decoration: none; margin-right: auto;
   display: inline-flex; align-items: center; gap: 8px;
 }
-.bk-drawer-head .bk-eye svg { width: 20px; height: 20px; }
+.bk-drawer-head .bk-eye svg { width: 20px; height: 20px; display: block; }
 .bk-drawer-close {
   flex: none; width: 34px; height: 34px;
   display: inline-flex; align-items: center; justify-content: center;
@@ -185,6 +361,16 @@
   background: none; color: var(--bk-muted); font-size: 19px; padding: 0;
 }
 .bk-drawer-close:hover { background: var(--bk-accent-soft); color: var(--bk-fg); }
+/* The drawer's theme button keeps the overlay's neutral styling. */
+#bk-drawer .bk-theme-btn {
+  flex: none; width: 34px; height: 34px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--bk-border); border-radius: 8px;
+  background: var(--bk-card); color: var(--bk-fg);
+  font: 15px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  cursor: pointer; padding: 0;
+}
+#bk-drawer .bk-theme-btn:hover { border-color: var(--bk-accent); color: var(--bk-fg); }
 .bk-drawer-search { margin: 12px 16px 4px; }
 .bk-drawer-search input {
   width: 100%; box-sizing: border-box; padding: 7px 12px;
@@ -230,18 +416,14 @@
 .bk-drawer-foot a:hover { border-color: var(--bk-accent); }
 .bk-drawer-foot a[aria-disabled="true"] { opacity: .35; pointer-events: none; }
 
-/* ---- Phone widths: reflowed header, single-column cards, 44px targets ---- */
+/* ---- Phone widths: reflowed sheet, 44px targets ---- */
 @media (max-width: 720px) {
-  .bk-header { flex-wrap: wrap; gap: 10px 12px; padding: 10px 16px; }
-  .bk-logo { font-size: 16px; }
-  .bk-meta { font-size: 12px; }
-  .bk-search { order: 1; flex: 1 1 100%; max-width: none; min-height: 44px; }
-  .bk-theme-btn { width: 44px; height: 44px; }
-  .bk-main { padding: 20px 16px 110px; }
-  .bk-projects { grid-template-columns: 1fr; }
-  .bk-card { padding: 16px; }
-  .bk-card li a { padding: 10px 8px; font-size: 14px; }
-  .bk-hit { padding: 14px 16px; }
+  .bk-landing { padding: 0 16px 96px; }
+  .bk-doc-head { padding-top: 32px; }
+  .bk-search { min-height: 44px; }
+  .bk-theme-btn, #bk-drawer .bk-theme-btn { width: 44px; height: 44px; }
+  .bk-toc a { min-height: 44px; box-sizing: border-box; align-items: center; }
+  .bk-hit { padding: 14px 12px; }
 
   #bk-fab {
     left: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px));
@@ -255,4 +437,10 @@
     padding: 12px; line-height: 20px;
   }
   .bk-drawer-foot a { padding: 12px 0; }
+}
+/* Narrow phones: drop the leaders and refs, keep clean title rows. */
+@media (max-width: 560px) {
+  .bk-leader, .bk-toc-ref { display: none; }
+  .bk-toc-title { white-space: normal; }
+  .bk-card-updated { margin-left: 0; }
 }

@@ -1,6 +1,6 @@
 # Contributing to Byakugan
 
-Thanks for helping architects see everything. 👁️
+Thanks for helping architects see everything.
 
 ## Ground rules
 

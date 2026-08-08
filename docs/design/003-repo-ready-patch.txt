@@ -1,0 +1,388 @@
+BYAKUGAN — REPO-READY PATCH 003 (design agent -> code agent)
+date: 2026-08-08
+against: main @ tree 04bffc2453f4
+scope: UI CHROME ONLY. doc.css / rules.md / .d-* diagram grammar UNTOUCHED
+       (per your Q1 answer: diagram color is semantic, it stays).
+
+Apply in this order. Five mechanical steps, no Go logic changes except one
+embedded-asset route.
+
+================================================================
+STEP 1 — replace internal/server/assets/app.css
+================================================================
+Full file below, between the BEGIN/END markers. Same selectors, same
+scoping (.bk-landing / #bk-fab / #bk-drawer, never :root), same
+data-bk-theme three-state machinery, same 720px mobile block. ONLY the
+palette values change, plus .bk-eye now sizes an inline SVG instead of
+filtering an emoji.
+
+Diff summary vs 023087c:
+  --bk-accent       #7c5cff -> #111113   (light)   #a18bff -> #ededf0 (dark)
+  --bk-accent-soft  #f0ecff -> #efeff1   (light)   #241f3d -> #26262b (dark)
+  --bk-mark         #fff3bf -> #e4e4e7   (light)   #4d4320 -> #3a3a40 (dark)
+  --bk-fg           #1a1a1f -> #111113   (light)   #ececf1 -> #ededf0 (dark)
+  --bk-muted        #6b6b76 -> #6e6e74   (light)   #9a9aa6 -> #9a9aa2 (dark)
+  --bk-border       #e4e4ea -> #e4e4e7   (light)   #2a2a33 -> #2a2a2e (dark)
+  --bk-bg           #101014 -> #101012   (dark)
+  --bk-card         #18181f -> #18181b   (dark)
+  --bk-shadow       tinted rgba(20,20,40) -> neutral rgba(0,0,0)
+  .bk-eye           { filter: saturate(.4) } -> { svg sizing rules }
+  .bk-card h2 a:hover        accent -> underline (accent == fg in mono)
+  .bk-card li a:hover        color: accent -> fg
+  .bk-more                   accent -> muted
+  .bk-drawer-foot a:hover    drops the color change, keeps border-color
+Everything else is byte-identical to your version.
+
+----- BEGIN internal/server/assets/app.css -----
+/* Byakugan UI — shared by the landing page and the injected overlay.
+   MONOCHROME edition of the current app.css: same selectors, same scoping,
+   same three-state theme machinery — palette reduced to black/white/grays.
+   Theme variables are scoped to the Byakugan roots (.bk-landing, #bk-fab,
+   #bk-drawer) — never :root — so the injected overlay can never recolor a
+   host document. An explicit user choice, stored as data-bk-theme on <html>,
+   beats the OS scheme in both directions. */
+.bk-landing, #bk-fab, #bk-drawer {
+  --bk-bg: #fafafa;
+  --bk-fg: #111113;
+  --bk-muted: #6e6e74;
+  --bk-card: #ffffff;
+  --bk-border: #e4e4e7;
+  --bk-accent: #111113;
+  --bk-accent-soft: #efeff1;
+  --bk-mark: #e4e4e7;
+  --bk-shadow: 0 1px 3px rgba(0, 0, 0, .06), 0 8px 24px rgba(0, 0, 0, .05);
+  color-scheme: light;
+}
+:root[data-bk-theme="dark"] .bk-landing,
+:root[data-bk-theme="dark"] #bk-fab,
+:root[data-bk-theme="dark"] #bk-drawer {
+  --bk-bg: #101012;
+  --bk-fg: #ededf0;
+  --bk-muted: #9a9aa2;
+  --bk-card: #18181b;
+  --bk-border: #2a2a2e;
+  --bk-accent: #ededf0;
+  --bk-accent-soft: #26262b;
+  --bk-mark: #3a3a40;
+  --bk-shadow: 0 1px 3px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .3);
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-bk-theme="light"]) .bk-landing,
+  :root:not([data-bk-theme="light"]) #bk-fab,
+  :root:not([data-bk-theme="light"]) #bk-drawer {
+    --bk-bg: #101012;
+    --bk-fg: #ededf0;
+    --bk-muted: #9a9aa2;
+    --bk-card: #18181b;
+    --bk-border: #2a2a2e;
+    --bk-accent: #ededf0;
+    --bk-accent-soft: #26262b;
+    --bk-mark: #3a3a40;
+    --bk-shadow: 0 1px 3px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .3);
+    color-scheme: dark;
+  }
+}
+
+/* The UA's [hidden] rule loses to display:grid/flex on classes; restore it.
+   Scoped to the landing page so it can never affect a host document. */
+.bk-landing [hidden] { display: none !important; }
+
+.bk-landing {
+  margin: 0;
+  background: var(--bk-bg);
+  color: var(--bk-fg);
+  font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+.bk-header {
+  position: sticky; top: 0; z-index: 10;
+  display: flex; align-items: center; gap: 16px;
+  padding: 14px 24px;
+  background: color-mix(in srgb, var(--bk-bg) 85%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--bk-border);
+}
+.bk-logo {
+  font-weight: 700; font-size: 17px; letter-spacing: -.02em;
+  color: var(--bk-fg); text-decoration: none; white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+/* .bk-eye now wraps the inline SVG mark (currentColor) instead of the emoji. */
+.bk-eye svg { width: 22px; height: 22px; display: block; }
+.bk-search {
+  flex: 1; max-width: 520px; box-sizing: border-box;
+  padding: 8px 14px;
+  border: 1px solid var(--bk-border); border-radius: 8px;
+  background: var(--bk-card); color: var(--bk-fg);
+  font: inherit; outline: none;
+}
+.bk-search:focus { border-color: var(--bk-accent); }
+.bk-meta { color: var(--bk-muted); font-size: 13px; margin-left: auto; white-space: nowrap; }
+
+/* Three-state theme toggle (auto → light → dark), landing header + drawer. */
+.bk-theme-btn {
+  flex: none; width: 34px; height: 34px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--bk-border); border-radius: 8px;
+  background: var(--bk-card); color: var(--bk-fg);
+  font: 15px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  cursor: pointer; padding: 0;
+}
+.bk-theme-btn:hover { border-color: var(--bk-accent); }
+
+.bk-main { max-width: 1080px; margin: 0 auto; padding: 28px 24px 80px; }
+
+.bk-projects {
+  display: grid; gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+.bk-card {
+  background: var(--bk-card);
+  border: 1px solid var(--bk-border); border-radius: 12px;
+  box-shadow: var(--bk-shadow);
+  padding: 18px 20px;
+  transition: border-color .12s ease, transform .12s ease;
+}
+.bk-card:hover { border-color: var(--bk-accent); transform: translateY(-1px); }
+.bk-card h2 {
+  margin: 0; font-size: 16px; letter-spacing: -.01em;
+  display: flex; align-items: baseline; gap: 8px;
+}
+.bk-card h2 a { color: var(--bk-fg); text-decoration: none; }
+.bk-card h2 a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.bk-count {
+  margin-left: auto; flex: none;
+  color: var(--bk-muted); font-size: 11.5px; font-weight: 600;
+  border: 1px solid var(--bk-border); border-radius: 999px;
+  padding: 1px 8px; white-space: nowrap;
+}
+.bk-card-updated { color: var(--bk-muted); font-size: 12px; margin-top: 3px; }
+.bk-card ul { list-style: none; margin: 10px 0 0; padding: 0; }
+.bk-card li { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bk-card li a {
+  display: block; padding: 4px 8px; margin: 0 -8px; border-radius: 6px;
+  color: var(--bk-muted); text-decoration: none; font-size: 13.5px;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.bk-card li a:hover { color: var(--bk-fg); background: var(--bk-accent-soft); }
+.bk-more { display: inline-block; margin-top: 6px; font-size: 12.5px; color: var(--bk-muted); }
+
+.bk-results { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+.bk-hit {
+  display: block; text-decoration: none; color: var(--bk-fg);
+  background: var(--bk-card); border: 1px solid var(--bk-border);
+  border-radius: 10px; padding: 12px 16px;
+}
+.bk-hit:hover, .bk-hit.bk-active { border-color: var(--bk-accent); background: var(--bk-accent-soft); }
+.bk-hit-title { font-weight: 600; font-size: 14.5px; }
+.bk-hit-path { color: var(--bk-muted); font-size: 12.5px; margin-top: 2px; }
+.bk-hit-snippet { color: var(--bk-muted); font-size: 13px; margin-top: 6px; }
+.bk-hit mark { background: var(--bk-mark); color: inherit; border-radius: 2px; padding: 0 1px; }
+.bk-empty { color: var(--bk-muted); text-align: center; margin-top: 80px; }
+.bk-empty code { background: var(--bk-card); border: 1px solid var(--bk-border); border-radius: 5px; padding: 2px 6px; }
+
+/* ---- Injected overlay (floating button + drawer on doc pages) ---- */
+#bk-fab {
+  position: fixed; left: 18px; bottom: 18px; z-index: 2147483000;
+  display: flex; align-items: center; gap: 7px;
+  padding: 9px 14px;
+  background: var(--bk-card); color: var(--bk-fg);
+  border: 1px solid var(--bk-border); border-radius: 999px;
+  box-shadow: var(--bk-shadow);
+  font: 600 13px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  cursor: pointer; user-select: none;
+}
+#bk-fab:hover { border-color: var(--bk-accent); }
+#bk-fab .bk-eye svg { width: 18px; height: 18px; }
+#bk-drawer {
+  position: fixed; inset: 0 auto 0 0; z-index: 2147483001;
+  width: min(360px, 92vw);
+  background: var(--bk-card); color: var(--bk-fg);
+  border-right: 1px solid var(--bk-border);
+  box-shadow: var(--bk-shadow);
+  transform: translateX(-105%); transition: transform .18s ease;
+  display: flex; flex-direction: column;
+  font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+#bk-drawer.bk-open { transform: translateX(0); }
+.bk-drawer-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 14px 12px 16px; border-bottom: 1px solid var(--bk-border);
+}
+.bk-drawer-head a {
+  font-weight: 700; color: var(--bk-fg); text-decoration: none; margin-right: auto;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.bk-drawer-head .bk-eye svg { width: 20px; height: 20px; }
+.bk-drawer-close {
+  flex: none; width: 34px; height: 34px;
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer; border: 0; border-radius: 8px;
+  background: none; color: var(--bk-muted); font-size: 19px; padding: 0;
+}
+.bk-drawer-close:hover { background: var(--bk-accent-soft); color: var(--bk-fg); }
+.bk-drawer-search { margin: 12px 16px 4px; }
+.bk-drawer-search input {
+  width: 100%; box-sizing: border-box; padding: 7px 12px;
+  border: 1px solid var(--bk-border); border-radius: 7px;
+  background: var(--bk-bg); color: var(--bk-fg); font: inherit; outline: none;
+}
+.bk-drawer-search input:focus { border-color: var(--bk-accent); }
+.bk-tree { flex: 1; overflow-y: auto; padding: 8px 8px 16px; }
+.bk-tree-project {
+  display: flex; align-items: center; gap: 7px;
+  margin: 12px 8px 3px; padding-top: 10px;
+  border-top: 1px solid var(--bk-border);
+  font-size: 11.5px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--bk-muted);
+}
+.bk-tree-project:first-child { border-top: 0; margin-top: 4px; padding-top: 0; }
+.bk-tree-count {
+  flex: none; font-size: 10.5px; font-weight: 600; letter-spacing: 0;
+  color: var(--bk-muted); background: var(--bk-bg);
+  border: 1px solid var(--bk-border); border-radius: 999px; padding: 0 7px;
+}
+.bk-tree a {
+  display: block; padding: 5px 10px; margin: 1px 0;
+  color: var(--bk-fg); text-decoration: none; border-radius: 6px;
+  font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.bk-tree a:hover { background: var(--bk-accent-soft); }
+.bk-tree a:active { background: var(--bk-accent-soft); color: var(--bk-accent); }
+.bk-tree a.bk-current {
+  background: var(--bk-accent-soft); color: var(--bk-accent); font-weight: 600;
+  box-shadow: inset 2px 0 0 var(--bk-accent);
+}
+.bk-drawer-foot {
+  display: flex; gap: 8px; padding: 12px 16px;
+  border-top: 1px solid var(--bk-border); font-size: 13px;
+}
+.bk-drawer-foot a {
+  flex: 1; text-align: center; padding: 7px 0;
+  border: 1px solid var(--bk-border); border-radius: 7px;
+  color: var(--bk-fg); text-decoration: none;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.bk-drawer-foot a:hover { border-color: var(--bk-accent); }
+.bk-drawer-foot a[aria-disabled="true"] { opacity: .35; pointer-events: none; }
+
+/* ---- Phone widths: reflowed header, single-column cards, 44px targets ---- */
+@media (max-width: 720px) {
+  .bk-header { flex-wrap: wrap; gap: 10px 12px; padding: 10px 16px; }
+  .bk-logo { font-size: 16px; }
+  .bk-meta { font-size: 12px; }
+  .bk-search { order: 1; flex: 1 1 100%; max-width: none; min-height: 44px; }
+  .bk-theme-btn { width: 44px; height: 44px; }
+  .bk-main { padding: 20px 16px 110px; }
+  .bk-projects { grid-template-columns: 1fr; }
+  .bk-card { padding: 16px; }
+  .bk-card li a { padding: 10px 8px; font-size: 14px; }
+  .bk-hit { padding: 14px 16px; }
+
+  #bk-fab {
+    left: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    min-height: 44px; padding: 11px 16px;
+  }
+  #bk-drawer { width: min(360px, 92vw); }
+  .bk-drawer-close { width: 44px; height: 44px; }
+  .bk-drawer-search input { min-height: 44px; }
+  .bk-tree a {
+    min-height: 44px; box-sizing: border-box;
+    padding: 12px; line-height: 20px;
+  }
+  .bk-drawer-foot a { padding: 12px 0; }
+}
+
+----- END internal/server/assets/app.css -----
+
+================================================================
+STEP 2 — new file internal/server/assets/favicon.svg
+================================================================
+262 B. Fixed ink (not currentColor) — favicons render out of document
+context, so the tile carries its own contrast.
+
+----- BEGIN internal/server/assets/favicon.svg -----
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="#111113"></rect><ellipse cx="16" cy="16" rx="11.5" ry="7" fill="none" stroke="#fff" stroke-width="2"></ellipse><circle cx="16" cy="16" r="3.8" fill="#fff"></circle></svg>
+----- END internal/server/assets/favicon.svg -----
+
+Serve it from the embedded assets at /__byakugan/favicon.svg (your Q2
+answer). It should ride the same embed + handler as app.css/app.js —
+if that handler is a directory FS the file needs no code change beyond
+the //go:embed pattern already covering assets/*.
+
+================================================================
+STEP 3 — internal/server/assets/landing.html (2 edits)
+================================================================
+3a. favicon link — replace the emoji data URI line:
+
+  OLD:
+  <link rel="icon" href="data:image/svg+xml,%3Csvg ... F0%9F%91%81 ... %3E">
+  NEW:
+  <link rel="icon" type="image/svg+xml" href="/__byakugan/favicon.svg">
+
+3b. header logo — replace the emoji span:
+
+  OLD:
+  <a class="bk-logo" href="/"><span class="bk-eye">EMOJI</span> Byakugan</a>
+  NEW:
+  <a class="bk-logo" href="/"><span class="bk-eye"><svg viewBox="0 0 32 32" width="22" height="22" aria-hidden="true"><ellipse cx="16" cy="16" rx="14" ry="8.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="16" cy="16" r="4.5" fill="currentColor"/></svg></span> Byakugan</a>
+
+  (.bk-logo gains display:inline-flex/align-items:center/gap:8px in the new
+  app.css, so the mark and wordmark align without extra markup.)
+
+================================================================
+STEP 4 — internal/server/assets/inject.js (2 string edits)
+================================================================
+The mark uses currentColor, so it inherits --bk-fg and flips with the
+theme automatically. Watch the quoting: these are single-quoted JS
+strings, the SVG uses double quotes — no escaping needed.
+
+4a. fab.innerHTML:
+
+  OLD:
+  fab.innerHTML = '<span class="bk-eye">EMOJI</span> Byakugan';
+  NEW:
+  fab.innerHTML = '<span class="bk-eye"><svg viewBox="0 0 32 32" width="18" height="18" aria-hidden="true"><ellipse cx="16" cy="16" rx="14" ry="8.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="16" cy="16" r="4.5" fill="currentColor"/></svg></span> Byakugan';
+
+4b. drawer head, first concatenated line:
+
+  OLD:
+  '<div class="bk-drawer-head"><a href="/"><span class="bk-eye">EMOJI</span> Byakugan</a>' +
+  NEW:
+  '<div class="bk-drawer-head"><a href="/"><span class="bk-eye"><svg viewBox="0 0 32 32" width="20" height="20" aria-hidden="true"><ellipse cx="16" cy="16" rx="14" ry="8.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="16" cy="16" r="4.5" fill="currentColor"/></svg></span> Byakugan</a>' +
+
+("EMOJI" above stands for the current eye emoji character — this patch
+file is deliberately ASCII so it survives any transport.)
+
+================================================================
+STEP 5 — tests
+================================================================
+e2e/tests/byakugan.spec.ts and any Go test asserting on the emoji or on
+'#7c5cff' will need updating. Suggested stable selectors instead of glyphs:
+  - logo present:  .bk-logo .bk-eye svg
+  - theme toggle:  .bk-theme-btn[data-bk-mode="auto"|"light"|"dark"]
+  - current page:  .bk-tree a.bk-current
+
+================================================================
+STANDALONE ASSETS (optional, for README / site / releases)
+================================================================
+byakugan-mark.svg (253 B, currentColor):
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32"><ellipse cx="16" cy="16" rx="14" ry="8.5" fill="none" stroke="currentColor" stroke-width="2"></ellipse><circle cx="16" cy="16" r="4.5" fill="currentColor"></circle></svg>
+
+byakugan-logo.svg (471 B) is the mark + wordmark lockup; it uses a
+system-sans <text> element, so it renders without any font download but
+will vary slightly per platform. For fixed-metric contexts (README
+header, release art) prefer the mark + real HTML text.
+
+================================================================
+WHAT THIS PATCH DOES NOT TOUCH
+================================================================
+  internal/agentkit/assets/doc.css      unchanged (semantic diagram color)
+  internal/agentkit/assets/rules.md     unchanged, wording stays valid
+  testdata/demo/_shared/doc.css         unchanged
+  index.go / server.go / search.js      unchanged
+  app.js                                unchanged
+
+Result: docs stay "blueprint editorial" with drafting blue; the Byakugan
+chrome around them goes neutral, so the server UI never competes with the
+document it is framing. That split is now the stated rule, not an accident.

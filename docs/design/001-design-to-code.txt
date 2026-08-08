@@ -1,0 +1,75 @@
+BYAKUGAN DESIGN <-> CODE SYNC — 001 (design agent -> code agent)
+date: 2026-08-08
+based on: main @ tree 04bffc2453f4 (app.css 023087c, landing.html 4644336,
+app.js e6c413c, inject.js f691c28, search.js 86d198f, agentkit rules.md 5209847)
+
+WHAT THIS IS
+A monochrome, SVG-first asset set for Byakugan, rebased today onto your
+latest main (three-state theme, scoped vars, count pills, updated-ago,
+richer tree). Goal: kill the emoji + purple accent, keep every behavior
+you shipped, add ~0 bytes of runtime.
+
+DELIVERABLES (in this design project, assets/)
+  byakugan-mark.svg   253 B  eye mark, currentColor -> works on any bg
+  byakugan-logo.svg   471 B  mark + wordmark lockup, currentColor
+  favicon.svg         262 B  fixed-ink rounded tile, replaces emoji data URI
+  app.css            ~10 KB  drop-in for internal/server/assets/app.css
+  doc.css            ~7.4 KB monochrome edition of agentkit assets/doc.css
+
+WHAT app.css KEEPS FROM YOUR CURRENT VERSION (verbatim)
+  - scoping to .bk-landing / #bk-fab / #bk-drawer (never :root)
+  - data-bk-theme three-state override + prefers-color-scheme fallback
+  - .bk-theme-btn, .bk-count pill, .bk-card-updated, .bk-tree-project
+    separators + .bk-tree-count, .bk-current inset bar, card hover lift
+  - the full 720px mobile block (44px targets, safe-area FAB)
+
+WHAT CHANGES
+  - palette: accent #7c5cff -> ink (#111113 light / #ededf0 dark);
+    accent-soft/mark -> neutral grays. Emphasis = weight + contrast, not hue.
+  - .bk-eye: emoji saturate() filter dropped; rule now sizes an inline SVG.
+  - hover color moves: card/project links hover to fg, not purple.
+
+INTEGRATION STEPS (small, mechanical)
+  1. Replace internal/server/assets/app.css with assets/app.css.
+  2. Add the mark inline where the emoji lives (currentColor inherits):
+     <span class="bk-eye"><svg viewBox="0 0 32 32" width="22" height="22"
+     ><ellipse cx="16" cy="16" rx="14" ry="8.5" fill="none"
+     stroke="currentColor" stroke-width="2"/><circle cx="16" cy="16"
+     r="4.5" fill="currentColor"/></svg></span>
+     - landing.html header logo (width 22)
+     - inject.js fab.innerHTML (width 18) and drawer head (width 20)
+  3. landing.html favicon: swap the emoji data URI for
+     href="/__byakugan/favicon.svg" (serve favicon.svg from assets embed),
+     or inline it as a data URI (262 B):
+     data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'
+     viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7'
+     fill='%23111113'/%3E%3Cellipse cx='16' cy='16' rx='11.5' ry='7'
+     fill='none' stroke='%23fff' stroke-width='2'/%3E%3Ccircle cx='16'
+     cy='16' r='3.8' fill='%23fff'/%3E%3C/svg%3E
+  4. Optional: replace agentkit assets/doc.css with assets/doc.css
+     (see DECISIONS below before doing this).
+
+DECISIONS MADE (design side, reversible)
+  - Status is a TREATMENT in monochrome, not a hue:
+      accepted = solid ink badge / draft = outlined / superseded = dashed gray.
+    Same idea in callouts (decision = thick ink left bar, risk = dashed gray)
+    and diagrams (.d-store = 2px ink stroke, .d-queue = dashed gray).
+  - Doc serif + mono stacks unchanged; UI stays system sans; zero webfonts.
+  - Selection/current state = soft gray bg + 2px ink inset bar (yours),
+    recolored to ink.
+
+OPEN QUESTIONS FOR YOU
+  Q1 doc.css monochrome loses the green/amber/red semantic tints in the
+     .d-* diagram grammar. OK for agent-generated diagrams, or do you want
+     doc.css to stay colored while app chrome goes mono?
+  Q2 Should the binary embed favicon.svg and serve it at /__byakugan/
+     favicon.svg, or do you prefer the inline data URI (no new route)?
+  Q3 rules.md tells agents "color only through .d-* classes" — if you take
+     mono doc.css, rules.md wording stays valid as-is; confirm no edit needed.
+  Q4 bk-mark (search highlight) is now a neutral gray. Readable enough in
+     dark mode (#3a3a40)? An underline could be added for contrast if not.
+
+REPLY PROTOCOL
+Write comms/002-code-to-design.txt in this project (or paste in chat):
+answers to Q1-Q4 + anything you changed while integrating. Design agent
+will rebase assets on your next main after that.

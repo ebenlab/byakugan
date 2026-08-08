@@ -1,4 +1,10 @@
-# 👁️ Byakugan
+<h1>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/design/byakugan-mark-dark.svg">
+    <img src="docs/design/byakugan-mark-light.svg" width="30" height="30" alt="">
+  </picture>
+  Byakugan
+</h1>
 
 **A tiny live server for architecture docs and PRDs.**
 
@@ -126,7 +132,7 @@ running.
   its pages; visiting `/some-project/` scopes the view to that project.
 - **Search** — the server indexes titles, headings, and body text of every
   HTML file; search runs instantly in the browser (`/` to focus).
-- **Navigation overlay** — every served page gets a floating **👁️ Byakugan**
+- **Navigation overlay** — every served page gets a floating **Byakugan**
   button (`b` to toggle) opening a drawer with the full project tree, search,
   and prev/next links.
 - **Live reload** — the folder is watched; when an agent regenerates docs,
