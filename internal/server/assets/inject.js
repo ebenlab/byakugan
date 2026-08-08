@@ -56,8 +56,32 @@
     var $next = drawer.querySelector('#bk-next');
     var index = { projects: [] };
 
-    function open() { drawer.classList.add('bk-open'); $input.focus(); }
-    function close() { drawer.classList.remove('bk-open'); }
+    // The open drawer is a history entry, so the back button (especially on
+    // mobile) closes the drawer instead of leaving the page. UI closes pop
+    // that entry via history.back() so no stray state accumulates.
+    if (history.state && history.state.bkDrawer) {
+      try { history.replaceState(null, ''); } catch (_) {} // stale entry from a previous visit
+    }
+    function hide() {
+      drawer.classList.remove('bk-open');
+      var a = document.activeElement;
+      if (a && drawer.contains(a)) a.blur();
+    }
+    function open() {
+      if (!drawer.classList.contains('bk-open')) {
+        try { history.pushState({ bkDrawer: true }, ''); } catch (_) { /* file: etc. */ }
+      }
+      drawer.classList.add('bk-open');
+      $input.focus();
+    }
+    function close() {
+      if (!drawer.classList.contains('bk-open')) return;
+      if (history.state && history.state.bkDrawer) history.back(); // popstate hides
+      else hide();
+    }
+    window.addEventListener('popstate', function () {
+      if (drawer.classList.contains('bk-open')) hide();
+    });
     fab.addEventListener('click', open);
     drawer.querySelector('.bk-drawer-close').addEventListener('click', close);
     BK.themeInit(drawer.querySelector('.bk-theme-btn'));

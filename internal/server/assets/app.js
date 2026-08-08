@@ -48,6 +48,18 @@
     });
   }
 
+  // The query lives in the URL (?q=…) so the browser back button restores
+  // search state: replaceState while typing keeps history clean, and a
+  // return visit (back from a result, direct link, bfcache) re-reads it.
+  function queryFromURL() {
+    var m = /[?&]q=([^&]*)/.exec(location.search);
+    return m ? decodeURIComponent(m[1].replace(/\+/g, ' ')) : '';
+  }
+  function syncURL(q) {
+    var url = location.pathname + (q ? '?q=' + encodeURIComponent(q) : '');
+    try { history.replaceState(history.state, '', url); } catch (_) { /* file: etc. */ }
+  }
+
   function renderSearch() {
     var q = $search.value.trim();
     if (!q) {
@@ -73,7 +85,19 @@
 
   BK.themeInit(document.getElementById('bk-theme'));
 
-  $search.addEventListener('input', renderSearch);
+  $search.value = queryFromURL();
+  $search.addEventListener('input', function () {
+    renderSearch();
+    syncURL($search.value.trim());
+  });
+  // Restore state when the page is revived from bfcache or history moves.
+  window.addEventListener('pageshow', function (e) {
+    if (e.persisted) { $search.value = queryFromURL(); renderSearch(); }
+  });
+  window.addEventListener('popstate', function () {
+    $search.value = queryFromURL();
+    renderSearch();
+  });
   document.addEventListener('keydown', function (e) {
     if (e.key === '/' && document.activeElement !== $search) {
       e.preventDefault();

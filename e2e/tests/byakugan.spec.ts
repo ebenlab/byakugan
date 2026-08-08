@@ -162,6 +162,45 @@ test.describe('navigation affordances', () => {
   });
 });
 
+test.describe('back button', () => {
+  test('search state lives in the URL and survives going back', async ({ page }) => {
+    await page.goto('/');
+    await page.locator('#bk-search').fill('serializable postgres');
+    await expect(page).toHaveURL(/\?q=serializable%20postgres/);
+    await page.locator('.bk-hit').first().click();
+    await expect(page).toHaveURL(/adr-001-postgres\.html$/);
+    await page.goBack();
+    await expect(page.locator('#bk-search')).toHaveValue('serializable postgres');
+    await expect(page.locator('.bk-hit').first()).toContainText('ADR-001');
+    await expect(page.locator('#bk-projects')).toBeHidden();
+  });
+
+  test('landing opened with ?q= starts searched', async ({ page }) => {
+    await page.goto('/?q=ledger');
+    await expect(page.locator('#bk-search')).toHaveValue('ledger');
+    await expect(page.locator('.bk-hit').first()).toBeVisible();
+  });
+
+  test('back closes the drawer instead of leaving the page', async ({ page }) => {
+    await page.goto('/overview.html');
+    await page.locator('#bk-fab').click();
+    await expect(page.locator('#bk-drawer')).toHaveClass(/bk-open/);
+    await page.goBack();
+    await expect(page.locator('#bk-drawer')).not.toHaveClass(/bk-open/);
+    await expect(page).toHaveURL(/overview\.html$/);
+  });
+
+  test('closing the drawer from the UI leaves no stray history entry', async ({ page }) => {
+    await page.goto('/overview.html');
+    await page.locator('#bk-fab').click();
+    await page.locator('.bk-drawer-close').click();
+    await expect(page.locator('#bk-drawer')).not.toHaveClass(/bk-open/);
+    await expect(page).toHaveURL(/overview\.html$/);
+    // The drawer's pushed entry was popped again: no bkDrawer state remains.
+    expect(await page.evaluate(() => (history.state as any)?.bkDrawer ?? null)).toBeNull();
+  });
+});
+
 test.describe('API', () => {
   test('index.json exposes projects, titles, and text', async ({ request }) => {
     const res = await request.get('/api/index.json');
