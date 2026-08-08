@@ -13,6 +13,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -143,7 +144,8 @@ func TestUpgradeTarGz(t *testing.T) {
 	if !bytes.Equal(got, newBin) {
 		t.Errorf("binary not replaced: %q", got)
 	}
-	if info, _ := os.Stat(exe); info.Mode().Perm()&0o111 == 0 {
+	// Windows has no Unix exec bit (Go reports 0666 for writable files).
+	if info, _ := os.Stat(exe); runtime.GOOS != "windows" && info.Mode().Perm()&0o111 == 0 {
 		t.Error("replaced binary is not executable")
 	}
 	if !strings.Contains(out.String(), "upgraded v0.2.0 → v0.9.0") {
