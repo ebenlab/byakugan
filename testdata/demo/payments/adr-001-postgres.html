@@ -1,7 +1,114 @@
-<!doctype html><html><head><meta name="color-scheme" content="light dark"><title>ADR-001: Postgres as the ledger store</title></head>
-<body><h1>ADR-001: Postgres as the ledger store</h1>
-<p><strong>Status:</strong> Accepted · <strong>Date:</strong> 2026-08-01</p>
-<h2>Context</h2><p>The ledger needs serializable transactions and strong constraints.</p>
-<h2>Decision</h2><p>Use Postgres with SERIALIZABLE isolation for journal writes.</p>
-<h2>Consequences</h2><p>Simple operational story; revisit sharding at 10k TPS.</p>
-</body></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ADR-001: Postgres as the ledger store</title>
+<link rel="stylesheet" href="../_shared/doc.css">
+</head>
+<body class="doc">
+
+<header class="doc-head">
+  <p class="kicker">payments · decision record · <span class="badge badge--accepted">accepted</span> · 2026-08-01</p>
+  <h1>ADR-001: Postgres as the ledger store</h1>
+  <p class="lede">The journal needs a store that can refuse to lie. We choose
+  Postgres and lean on its strongest isolation level rather than building
+  correctness in application code.</p>
+</header>
+
+<main>
+<section>
+  <h2>Context</h2>
+  <p>The ledger needs serializable transactions and strong constraints: a posting
+  touches several account rows plus the outbox, and two concurrent postings
+  against the same account must never interleave into an unbalanced state.
+  Whatever we pick also has to be operable by a two-person team.</p>
+</section>
+
+<section>
+  <h2>Options considered</h2>
+  <table>
+    <thead><tr><th>Option</th><th>For</th><th>Against</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Postgres</strong></td>
+        <td>True SERIALIZABLE isolation, deferrable constraints, boring ops, team fluency</td>
+        <td>Single-writer ceiling near 10k TPS per partition</td>
+      </tr>
+      <tr>
+        <td>DynamoDB</td>
+        <td>Managed scale, predictable latency</td>
+        <td>25-item transaction cap forces app-side balancing; weaker constraint model</td>
+      </tr>
+      <tr>
+        <td>Event store (custom)</td>
+        <td>Journal is naturally an event log</td>
+        <td>We would own consistency, snapshots, and tooling — highest risk for least leverage</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2>Decision</h2>
+  <div class="callout callout--decision">
+    <strong>Decision</strong>
+    <p>Use Postgres with SERIALIZABLE isolation for journal writes. Conflicting
+    postings fail with a serialization error and are retried by the ledger core;
+    the database — not our code — proves that no unbalanced interleaving exists.</p>
+  </div>
+
+  <figure class="plate">
+    <svg class="diagram" viewBox="0 0 780 220" role="img" aria-label="Serializable write path with retry">
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 0L10 5L0 10z" class="d-arrhead"/>
+        </marker>
+      </defs>
+
+      <rect class="d-box" x="20" y="30" width="150" height="56" rx="8"/>
+      <text class="d-title" x="95" y="54">Posting A</text>
+      <text class="d-sub" x="95" y="70">debit acct 42</text>
+
+      <rect class="d-box" x="20" y="134" width="150" height="56" rx="8"/>
+      <text class="d-title" x="95" y="158">Posting B</text>
+      <text class="d-sub" x="95" y="174">debit acct 42</text>
+
+      <rect class="d-store" x="330" y="82" width="160" height="60" rx="10"/>
+      <text class="d-title" x="410" y="106">Postgres</text>
+      <text class="d-sub" x="410" y="122">SERIALIZABLE</text>
+
+      <rect class="d-box" x="610" y="82" width="150" height="60" rx="8"/>
+      <text class="d-title" x="685" y="106">Committed</text>
+      <text class="d-sub" x="685" y="122">balanced, in order</text>
+
+      <path class="d-flow" d="M170 58 C 250 62, 290 78, 324 94" marker-end="url(#arr)"/>
+      <path class="d-flow" d="M170 162 C 250 158, 290 142, 324 130" marker-end="url(#arr)"/>
+      <line class="d-flow" x1="490" y1="112" x2="604" y2="112" marker-end="url(#arr)"/>
+      <text class="d-label" x="512" y="104">one wins</text>
+
+      <path class="d-async" d="M410 142 C 360 196, 220 204, 140 194" marker-end="url(#arr)"/>
+      <text class="d-label" x="250" y="214">loser gets 40001 → ledger core retries</text>
+    </svg>
+    <figcaption><b>Fig 1</b> — concurrent postings against one account: the database serializes, the service retries.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <h2>Consequences</h2>
+  <ul>
+    <li>Simple operational story: one database technology across the platform.</li>
+    <li>Retry loops are mandatory in the ledger core — serialization failures are normal, not exceptional.</li>
+    <li>Constraints (balanced legs, currency checks) live in the schema and cannot be bypassed by new code paths.</li>
+  </ul>
+  <div class="callout callout--risk">
+    <strong>Revisit when</strong>
+    <p>Sustained journal write load approaches 10k TPS on a single partition —
+    the trigger to design account-range sharding (tracked in the ledger roadmap).</p>
+  </div>
+</section>
+</main>
+
+<footer class="doc-foot">payments · ADR-001 · supersedes: none · style: ../_shared/doc.css</footer>
+</body>
+</html>

@@ -1,0 +1,310 @@
+/* ============================================================
+   Byakugan doc design system — "blueprint editorial"
+   ============================================================
+   A self-contained stylesheet for agent-generated architecture
+   docs, ADRs, and PRDs. Copy this file into your docs folder as
+   _shared/doc.css and link it from every page:
+
+     <link rel="stylesheet" href="../_shared/doc.css">  (in a project)
+     <link rel="stylesheet" href="_shared/doc.css">     (at the root)
+
+   Page skeleton every doc should follow:
+
+     <body class="doc">
+       <header class="doc-head">
+         <p class="kicker">payments · architecture ·
+            <span class="badge badge--accepted">accepted</span></p>
+         <h1>Title of the document</h1>
+         <p class="lede">One-paragraph summary of what this doc says.</p>
+       </header>
+       <main>
+         <section><h2>First section</h2> … </section>
+         <figure class="plate">
+           <svg class="diagram" viewBox="0 0 720 400">…</svg>
+           <figcaption>Fig 1 — caption text</figcaption>
+         </figure>
+       </main>
+       <footer class="doc-foot">…provenance line…</footer>
+     </body>
+
+   Diagram grammar (inside <svg class="diagram">):
+     .d-box     component box        .d-store   datastore (use <rect rx="10">)
+     .d-actor   external actor       .d-queue   async infra (dashed)
+     .d-title   box title text       .d-sub     small mono annotation
+     .d-flow    solid arrow line     .d-async   dashed arrow line
+     .d-life    sequence lifeline    .d-num     numbered step circle
+     .d-lane    swimlane background  .d-numtext number inside the circle
+   Every arrow line should end with marker-end="url(#arr)" and each SVG
+   defines its own <marker id="arr"> (ids are per-document, keep them local).
+   No fixed width/height on the svg — viewBox only; CSS makes it fluid.
+   ============================================================ */
+
+:root {
+  --paper: #f6f4ee;
+  --card: #fdfcf8;
+  --ink: #232019;
+  --muted: #6f6a5c;
+  --line: #d8d3c4;
+  --line-soft: #e7e3d7;
+  --accent: #1d5cc4;      /* drafting blue */
+  --accent-soft: #e5edfb;
+  --ok: #22713f;
+  --ok-soft: #e0efe4;
+  --warn: #9a5b00;
+  --warn-soft: #f7ead6;
+  --risk: #a33224;
+  --risk-soft: #f8e4e0;
+  --grid-dot: #cfc9b9;
+  --shadow: 0 1px 2px rgba(40, 34, 18, .06), 0 10px 30px rgba(40, 34, 18, .07);
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #15171b;
+    --card: #1c1f25;
+    --ink: #e6e3d8;
+    --muted: #96917f;
+    --line: #33363e;
+    --line-soft: #262932;
+    --accent: #7fa9f2;
+    --accent-soft: #1e2a42;
+    --ok: #6fbf8d;
+    --ok-soft: #1c3226;
+    --warn: #d9a05b;
+    --warn-soft: #38290f;
+    --risk: #e08573;
+    --risk-soft: #3c1f1a;
+    --grid-dot: #2e323b;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .5), 0 10px 30px rgba(0, 0, 0, .35);
+  }
+}
+
+/* ---------- base ---------- */
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body.doc {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 17px/1.65 "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  padding: 0 24px 96px;
+}
+.doc main, .doc-head, .doc-foot { max-width: 700px; margin-inline: auto; }
+
+code, .kicker, .badge, th, figcaption, .d-sub, .d-numtext {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+code {
+  font-size: .82em;
+  background: var(--line-soft);
+  border-radius: 4px;
+  padding: .12em .38em;
+}
+
+a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+
+/* ---------- document header ---------- */
+.doc-head { padding: 56px 0 8px; }
+.kicker {
+  font-size: 12px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 14px;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+}
+.kicker::before {
+  content: "";
+  width: 34px; height: 1px;
+  background: var(--accent);
+  display: inline-block;
+}
+.doc h1 {
+  font-size: clamp(30px, 5vw, 42px);
+  line-height: 1.12;
+  letter-spacing: -.015em;
+  font-weight: 600;
+  margin: 0 0 16px;
+}
+.lede {
+  font-size: 20px;
+  line-height: 1.5;
+  color: var(--muted);
+  margin: 0 0 12px;
+  font-style: italic;
+}
+.doc-head::after {
+  content: "";
+  display: block;
+  border-bottom: 1px solid var(--line);
+  margin-top: 28px;
+}
+
+/* ---------- badges ---------- */
+.badge {
+  font-size: 11px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: 3px 9px 2px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+}
+.badge--accepted { color: var(--ok); background: var(--ok-soft); }
+.badge--draft    { color: var(--warn); background: var(--warn-soft); }
+.badge--superseded { color: var(--risk); background: var(--risk-soft); }
+
+/* ---------- sections ---------- */
+.doc main { counter-reset: sec; }
+.doc h2 {
+  counter-increment: sec;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -.01em;
+  margin: 52px 0 14px;
+  display: flex; align-items: baseline; gap: 14px;
+}
+.doc h2::before {
+  content: counter(sec, decimal-leading-zero);
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 13px;
+  color: var(--accent);
+  letter-spacing: .08em;
+}
+.doc h3 { font-size: 18px; margin: 30px 0 8px; }
+.doc p { margin: 0 0 16px; }
+.doc ul, .doc ol { margin: 0 0 16px; padding-left: 26px; }
+.doc li { margin: 4px 0; }
+
+/* ---------- callouts ---------- */
+.callout {
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  background: var(--card);
+  border-radius: 0 8px 8px 0;
+  padding: 14px 18px;
+  margin: 22px 0;
+  box-shadow: var(--shadow);
+}
+.callout > :last-child { margin-bottom: 0; }
+.callout strong:first-child {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  display: block;
+  margin-bottom: 6px;
+}
+.callout--decision { border-left-color: var(--ok); }
+.callout--decision strong:first-child { color: var(--ok); }
+.callout--risk { border-left-color: var(--risk); }
+.callout--risk strong:first-child { color: var(--risk); }
+
+/* ---------- stat row (PRD metrics) ---------- */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.stat {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px 16px 12px;
+  box-shadow: var(--shadow);
+}
+.stat b {
+  display: block;
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -.02em;
+}
+.stat span {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ---------- tables ---------- */
+.doc table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 22px 0;
+  font-size: 15.5px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.doc th {
+  text-align: left;
+  font-size: 11.5px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 500;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  background: var(--line-soft);
+}
+.doc td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line-soft);
+  vertical-align: top;
+}
+.doc tr:last-child td { border-bottom: 0; }
+
+/* ---------- figure plates (diagram frames) ---------- */
+.plate {
+  margin: 30px 0;
+  max-width: 860px;        /* plates may run wider than prose */
+  background: var(--card);
+  background-image: radial-gradient(var(--grid-dot) 1px, transparent 1px);
+  background-size: 22px 22px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 26px 26px 14px;
+  box-shadow: var(--shadow);
+  overflow-x: auto;
+}
+.plate figcaption {
+  font-size: 12px;
+  letter-spacing: .08em;
+  color: var(--muted);
+  border-top: 1px solid var(--line-soft);
+  margin-top: 16px;
+  padding-top: 10px;
+}
+.plate figcaption b { color: var(--accent); font-weight: 600; }
+
+/* ---------- diagram grammar ---------- */
+.diagram { width: 100%; height: auto; display: block; min-width: 560px; }
+.diagram text { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; fill: var(--ink); }
+.d-box   { fill: var(--paper); stroke: var(--ink); stroke-width: 1.2; }
+.d-actor { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.2; }
+.d-store { fill: var(--ok-soft); stroke: var(--ok); stroke-width: 1.2; }
+.d-queue { fill: var(--warn-soft); stroke: var(--warn); stroke-width: 1.2; stroke-dasharray: 5 3; }
+.d-title { font-size: 13px; font-weight: 600; text-anchor: middle; }
+.d-sub   { font-size: 10px; fill: var(--muted); text-anchor: middle; }
+.d-flow  { stroke: var(--ink); stroke-width: 1.2; fill: none; }
+.d-async { stroke: var(--muted); stroke-width: 1.2; fill: none; stroke-dasharray: 5 4; }
+.d-label { font-size: 10.5px; fill: var(--muted); }
+.d-life  { stroke: var(--line); stroke-width: 1; stroke-dasharray: 2 4; }
+.d-lane  { fill: var(--line-soft); opacity: .5; }
+.d-num     { fill: var(--accent); }
+.d-numtext { font-size: 10px; fill: var(--paper); text-anchor: middle; font-weight: 700; }
+.d-arrhead { fill: var(--ink); }
+
+/* ---------- footer ---------- */
+.doc-foot {
+  margin-top: 72px;
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+  font-size: 13px;
+  color: var(--muted);
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}

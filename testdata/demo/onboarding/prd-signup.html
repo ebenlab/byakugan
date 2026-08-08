@@ -1,6 +1,122 @@
-<!doctype html><html><head><meta name="color-scheme" content="light dark"><title>PRD: Signup Flow</title></head>
-<body><h1>PRD: Signup Flow</h1>
-<h2>Problem</h2><p>Activation drops 40% at the email-verification step.</p>
-<h2>Proposal</h2><p>Magic-link signup with progressive profiling after first login.</p>
-<h2>Success metrics</h2><p>Signup completion above 75% within two weeks of launch.</p>
-</body></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PRD: Signup Flow</title>
+<link rel="stylesheet" href="../_shared/doc.css">
+</head>
+<body class="doc">
+
+<header class="doc-head">
+  <p class="kicker">onboarding · product requirements · <span class="badge badge--draft">in review</span> · 2026-08-05</p>
+  <h1>PRD: Signup Flow</h1>
+  <p class="lede">Replace password-and-verify signup with magic links, and move
+  profile questions to after the first successful login.</p>
+</header>
+
+<main>
+<section>
+  <h2>Problem</h2>
+  <p>Activation drops 40% at the email-verification step: users create a password,
+  get bounced to their inbox, and a large share never come back. The password
+  itself serves no product purpose — sessions are long-lived and sensitive
+  actions re-authenticate anyway.</p>
+
+  <div class="stats">
+    <div class="stat"><b>40%</b><span>drop at verification</span></div>
+    <div class="stat"><b>75%</b><span>target completion</span></div>
+    <div class="stat"><b>2 wks</b><span>measurement window</span></div>
+  </div>
+</section>
+
+<section>
+  <h2>Proposal</h2>
+  <p>Magic-link signup with progressive profiling after first login: the form asks
+  for an email address and nothing else. The link both verifies the address and
+  starts the session — one step instead of three. Profile fields arrive later,
+  one question at a time, inside the product.</p>
+
+  <figure class="plate">
+    <svg class="diagram" viewBox="0 0 720 400" role="img" aria-label="Signup sequence diagram">
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 0L10 5L0 10z" class="d-arrhead"/>
+        </marker>
+      </defs>
+
+      <rect class="d-actor" x="40"  y="16" width="110" height="40" rx="8"/>
+      <text class="d-title" x="95"  y="41">User</text>
+      <rect class="d-box" x="220" y="16" width="110" height="40" rx="8"/>
+      <text class="d-title" x="275" y="41">Web app</text>
+      <rect class="d-box" x="400" y="16" width="110" height="40" rx="8"/>
+      <text class="d-title" x="455" y="41">API</text>
+      <rect class="d-queue" x="580" y="16" width="110" height="40" rx="8"/>
+      <text class="d-title" x="635" y="41">Email svc</text>
+
+      <line class="d-life" x1="95"  y1="56" x2="95"  y2="384"/>
+      <line class="d-life" x1="275" y1="56" x2="275" y2="384"/>
+      <line class="d-life" x1="455" y1="56" x2="455" y2="384"/>
+      <line class="d-life" x1="635" y1="56" x2="635" y2="384"/>
+
+      <circle class="d-num" cx="72" cy="88" r="9"/><text class="d-numtext" x="72" y="92">1</text>
+      <line class="d-flow" x1="95" y1="88" x2="269" y2="88" marker-end="url(#arr)"/>
+      <text class="d-label" x="120" y="80">submit email</text>
+
+      <circle class="d-num" cx="252" cy="128" r="9"/><text class="d-numtext" x="252" y="132">2</text>
+      <line class="d-flow" x1="275" y1="128" x2="449" y2="128" marker-end="url(#arr)"/>
+      <text class="d-label" x="300" y="120">POST /signup</text>
+
+      <circle class="d-num" cx="432" cy="168" r="9"/><text class="d-numtext" x="432" y="172">3</text>
+      <line class="d-async" x1="455" y1="168" x2="629" y2="168" marker-end="url(#arr)"/>
+      <text class="d-label" x="480" y="160">queue magic link (async)</text>
+
+      <circle class="d-num" cx="612" cy="208" r="9"/><text class="d-numtext" x="612" y="212">4</text>
+      <line class="d-async" x1="635" y1="208" x2="101" y2="208" marker-end="url(#arr)"/>
+      <text class="d-label" x="130" y="200">email with one-time link</text>
+
+      <circle class="d-num" cx="72" cy="248" r="9"/><text class="d-numtext" x="72" y="252">5</text>
+      <line class="d-flow" x1="95" y1="248" x2="449" y2="248" marker-end="url(#arr)"/>
+      <text class="d-label" x="120" y="240">GET /verify?token=…</text>
+
+      <circle class="d-num" cx="432" cy="288" r="9"/><text class="d-numtext" x="432" y="292">6</text>
+      <line class="d-flow" x1="455" y1="288" x2="101" y2="288" marker-end="url(#arr)"/>
+      <text class="d-label" x="120" y="280">session cookie — signed in</text>
+
+      <circle class="d-num" cx="252" cy="328" r="9"/><text class="d-numtext" x="252" y="332">7</text>
+      <line class="d-async" x1="275" y1="328" x2="101" y2="328" marker-end="url(#arr)"/>
+      <text class="d-label" x="120" y="320">progressive profiling, one field at a time</text>
+
+      <text class="d-label" x="40" y="372">token: single use, 15 min TTL, bound to requesting device where possible</text>
+    </svg>
+    <figcaption><b>Fig 1</b> — signup sequence. Steps 3–4 are asynchronous; everything the user feels is steps 1, 5, 6.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <h2>Success metrics</h2>
+  <p>Signup completion above 75% within two weeks of launch, measured from form
+  view to authenticated session. Guardrails: no rise in support tickets about
+  lost access, and median time-to-signed-in under 60 seconds.</p>
+  <table>
+    <thead><tr><th>Metric</th><th>Today</th><th>Target</th></tr></thead>
+    <tbody>
+      <tr><td>Form → session completion</td><td>~52%</td><td>≥ 75%</td></tr>
+      <tr><td>Median time to signed in</td><td>4m 10s</td><td>&lt; 60s</td></tr>
+      <tr><td>Verification-step abandonment</td><td>40%</td><td>&lt; 10%</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2>Out of scope</h2>
+  <ul>
+    <li>SSO / social login — separate track, different risk profile.</li>
+    <li>Password removal for existing accounts — follows only after this ships and holds.</li>
+  </ul>
+</section>
+</main>
+
+<footer class="doc-foot">onboarding · PRD · owner: growth pod · style: ../_shared/doc.css</footer>
+</body>
+</html>
