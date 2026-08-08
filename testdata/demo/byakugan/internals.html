@@ -110,6 +110,21 @@
     scan, and a scan never waits on readers.</p>
   </div>
 
+  <p>That contract is small enough to quote in full — this is the entire
+  locking story of the system:</p>
+
+<pre><code>// index.go — readers copy a pointer, nothing more
+func (ix *Index) Current() *Snapshot {
+    ix.mu.RLock()
+    defer ix.mu.RUnlock()
+    return ix.snap
+}
+
+// …and Rebuild's final act is one swap under the write lock:
+ix.mu.Lock()
+ix.snap = snap
+ix.mu.Unlock()</code></pre>
+
   <figure class="plate">
     <svg class="diagram" viewBox="0 0 780 220" role="img" aria-label="Data flow from disk to DOM">
       <defs>
@@ -159,6 +174,20 @@
   <em>last</em> <code>&lt;/body&gt;</code> case-insensitively and inserts one
   deferred script tag — appending when no closing tag exists, so even sloppy
   documents get the overlay.</p>
+
+<pre><code>// server.go — every HTML response leaves with one extra line
+func injectHTML(b []byte) []byte {
+    lower := bytes.ToLower(b)
+    if i := bytes.LastIndex(lower, []byte("&lt;/body&gt;")); i >= 0 {
+        var out bytes.Buffer
+        out.Grow(len(b) + len(injectSnippet))
+        out.Write(b[:i])
+        out.WriteString(injectSnippet)
+        out.Write(b[i:])
+        return out.Bytes()
+    }
+    return append(b, []byte(injectSnippet)...) // no &lt;/body&gt;: still inject
+}</code></pre>
   <p>Live reload is a tiny fan-out: each connected browser gets a goroutine
   holding a buffered channel (capacity 4) registered in a
   <code>map[chan string]struct{}</code>. <code>Broadcast</code> does a
@@ -176,6 +205,13 @@
   Debouncing is a single <code>time.AfterFunc</code> timer: every event resets
   it, and only 300 ms of silence lets it fire — an agent regenerating fifty
   files produces exactly one rebuild and one reload.</p>
+
+<pre><code>// watcher.go — the entire debounce: a burst of saves becomes one callback
+if timer == nil {
+    timer = time.AfterFunc(debounce, onChange)
+} else {
+    timer.Reset(debounce)
+}</code></pre>
 </section>
 
 <section>
@@ -192,6 +228,13 @@
       <tr><td>body text</td><td>1</td></tr>
     </tbody>
   </table>
+<pre><code>// search.js — additive weights; a page must land every token
+if (title.indexOf(t) >= 0) s += title.indexOf(t) === 0 ? 8 : 5;
+if (path.indexOf(t) >= 0) s += 3;
+if (headings.indexOf(t) >= 0) s += 3;
+if (text.indexOf(t) >= 0) s += 1;
+if (s === 0) return 0; // one missing token disqualifies the page</code></pre>
+
   <p>Hits sort by score, top 20 ship. The same <code>score()</code> ranks the
   landing search and the overlay drawer's filter, so both surfaces agree on
   what matters. Snippets center the first match; highlighting escapes both the

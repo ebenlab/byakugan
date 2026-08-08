@@ -17,7 +17,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/ebenlab/byakugan/internal/agentkit"
 	"github.com/ebenlab/byakugan/internal/index"
+	"github.com/ebenlab/byakugan/internal/markdown"
 )
 
 //go:embed assets
@@ -46,6 +48,12 @@ func New(idx *index.Index, version string) *Server {
 		subs:    map[chan string]struct{}{},
 	}
 	s.mux.HandleFunc("GET /api/index.json", s.handleIndex)
+	// The doc design system ships in the binary so rendered Markdown pages
+	// (and any HTML page that wants it) work without a _shared/doc.css.
+	s.mux.HandleFunc("GET /__byakugan/doc.css", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/css; charset=utf-8")
+		w.Write(agentkit.StyleCSS())
+	})
 	s.mux.HandleFunc("GET /events", s.handleEvents)
 	s.mux.Handle("GET /__byakugan/", http.StripPrefix("/__byakugan/", s.assetHandler()))
 	s.mux.HandleFunc("GET /", s.handlePage)
@@ -161,6 +169,10 @@ func (s *Server) handlePage(w http.ResponseWriter, r *http.Request) {
 		s.serveHTMLFile(w, full)
 		return
 	}
+	if ext == ".md" {
+		s.serveMarkdownFile(w, full, clean)
+		return
+	}
 	http.ServeFile(w, r, full)
 }
 
@@ -176,6 +188,30 @@ func (s *Server) serveHTMLFile(w http.ResponseWriter, fullPath string) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
 	w.Write(b)
+}
+
+// serveMarkdownFile renders a .md file into the doc.css skeleton and
+// injects the overlay, making it an ordinary Byakugan page.
+func (s *Server) serveMarkdownFile(w http.ResponseWriter, fullPath, urlPath string) {
+	src, err := os.ReadFile(fullPath)
+	if err != nil {
+		http.Error(w, "unreadable file", http.StatusInternalServerError)
+		return
+	}
+	rel := strings.TrimPrefix(urlPath, "/")
+	project := ""
+	if i := strings.Index(rel, "/"); i >= 0 {
+		project = rel[:i]
+	}
+	name := strings.TrimSuffix(filepath.Base(fullPath), filepath.Ext(fullPath))
+	page, err := markdown.Page(src, name, project)
+	if err != nil {
+		http.Error(w, "markdown rendering failed", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-store")
+	w.Write(injectHTML(page))
 }
 
 func (s *Server) serveAsset(w http.ResponseWriter, name string) {

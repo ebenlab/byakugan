@@ -37,7 +37,7 @@ project tracker (Linear) as-is. Status reflects 2026-08-08.
 - [ ] Nested project support (subfolders below first level as sections)
 - [ ] Breadcrumbs on generated pages
 - [ ] Sort options on landing page (recently updated first)
-- [ ] Markdown rendering (serve `.md` as HTML) — agents don't always emit HTML
+- [x] Markdown rendering (serve `.md` as HTML) — goldmark, GFM, scoped hard (2026-08-08)
 - [ ] `--base-path` flag for serving behind a reverse-proxy prefix
 
 ## Milestone 3 — v0.3.0: Retrieval quality

@@ -80,6 +80,20 @@ This downloads the archive for your OS/architecture, verifies its sha256
 against the release's `checksums.txt`, and atomically replaces the running
 binary. If byakugan came from a package manager, upgrade it there instead.
 
+### Markdown
+
+`.md` files are first-class pages: byakugan renders CommonMark + GFM
+(tables, strikethrough, autolinks) into the shared doc style server-side,
+indexes them for search, and gives them the same overlay, navigation, and
+live reload as HTML. Optional front matter is capped at three keys —
+`title`, `status`, `date` — which fill the page's kicker line; otherwise the
+title comes from the first `# heading`, then the filename.
+
+What Markdown support deliberately does **not** do — and won't: no
+configuration, no templates or themes, no syntax highlighting, no TOC
+generation, no taxonomies. Byakugan is a docs server, not a static site
+generator; if you need those, generate HTML (see `byakugan template`).
+
 `template` with a missing or unknown kind lists the available kinds on
 stderr and exits with status 2.
 

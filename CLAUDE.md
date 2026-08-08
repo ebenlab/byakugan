@@ -21,6 +21,7 @@ cd e2e && npx playwright test  # browser e2e tests (builds the binary itself)
 | `main.go` | CLI flags, subcommand dispatch, wiring; nothing else lives here |
 | `internal/agentkit` | Agent-facing embedded assets: doc.css design system, authoring rules, prompt templates (`style`/`rules`/`template` subcommands). Its doc.css is canonical; `testdata/demo/_shared/doc.css` must stay byte-identical (a test enforces this) |
 | `internal/index` | Folder scanning, HTML text extraction, search index snapshot |
+| `internal/markdown` | Renders `.md` into the doc.css skeleton (goldmark, GFM). Hard boundary: no config, templates, highlighting, TOC, or taxonomies — never grow this toward a static site generator |
 | `internal/server` | HTTP routes, SSE hub, HTML injection, embedded UI assets |
 | `internal/server/assets` | The entire frontend (landing, overlay, search core) |
 | `internal/watcher` | Recursive fsnotify watcher with debounce |

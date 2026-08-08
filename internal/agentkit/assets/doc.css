@@ -325,6 +325,32 @@ a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset:
 .d-numtext { font-size: 10px; fill: var(--paper); text-anchor: middle; font-weight: 700; }
 .d-arrhead { fill: var(--ink); }
 
+/* ---------- code snippets & ascii diagrams ---------- */
+/* Both render with zero JavaScript — no highlighter, no line-number DOM,
+   nothing that costs paint time. Keep snippets short and load-bearing. */
+.doc pre {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin: 18px 0;
+  overflow-x: auto;
+  font: 13px/1.5 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+.doc pre code { background: none; border-radius: 0; padding: 0; font-size: inherit; }
+
+/* ASCII diagrams: <pre class="ascii"> inside a .plate (HTML) or a plain
+   fenced block (Markdown). The zero-cost alternative to SVG — greppable,
+   diffable, instant. Keep lines ≤ 78 columns so nothing wraps; the
+   container scrolls horizontally instead. Unicode box-drawing characters
+   (─ │ ┌ ┐ └ ┘ ├ ▶) read crisper than +--+ at any size. */
+.plate pre, pre.ascii {
+  background: none; border: 0; margin: 0; padding: 4px 2px;
+  color: var(--ink);
+  font: 12.5px/1.5 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  overflow-x: auto; white-space: pre;
+}
+
 /* ---------- footer ---------- */
 .doc-foot {
   margin-top: 72px;

@@ -11,7 +11,7 @@ test.describe('landing page', () => {
     await page.goto('/');
     await expect(page.locator('.bk-card')).toHaveCount(1);
     await expect(page.getByRole('link', { name: 'byakugan', exact: true })).toBeVisible();
-    await expect(page.locator('#bk-meta')).toContainText('2 pages');
+    await expect(page.locator('#bk-meta')).toContainText('3 pages');
   });
 
   test('search returns ranked hits with highlights and hides the sections', async ({ page }) => {
@@ -54,9 +54,9 @@ test.describe('document pages', () => {
     await expect(drawer.locator('.bk-tree a.bk-current')).toContainText('Architecture Overview');
     // First page of the dossier: nothing before it, internals after it.
     await expect(drawer.locator('#bk-prev')).toHaveAttribute('aria-disabled', 'true');
-    await expect(drawer.locator('#bk-next')).toContainText('Internals');
+    await expect(drawer.locator('#bk-next')).toContainText('Decision log');
     await drawer.locator('#bk-next').click();
-    await expect(page).toHaveURL(/internals\.html$/);
+    await expect(page).toHaveURL(/decisions\.md$/);
   });
 
   test('keyboard: b toggles the drawer, escape closes it', async ({ page }) => {
@@ -164,7 +164,7 @@ test.describe('navigation affordances', () => {
     const counts = page.locator('#bk-drawer .bk-tree-count');
     await expect(counts).toHaveCount(1);
     const byakugan = page.locator('#bk-drawer .bk-tree-project', { hasText: 'byakugan' });
-    await expect(byakugan.locator('.bk-tree-count')).toHaveText('2');
+    await expect(byakugan.locator('.bk-tree-count')).toHaveText('3');
   });
 });
 
@@ -207,15 +207,46 @@ test.describe('back button', () => {
   });
 });
 
+test.describe('markdown', () => {
+  test('.md serves as a styled doc page with the overlay', async ({ page }) => {
+    await page.goto('/byakugan/decisions.md');
+    await expect(page.getByRole('heading', { name: 'Decision log', level: 1 })).toBeVisible();
+    // GFM table rendered, not raw pipes.
+    await expect(page.locator('table')).toBeVisible();
+    await expect(page.locator('del')).toContainText('Syntax highlighting');
+    // Front matter surfaces in the kicker; doc.css applied via the binary.
+    await expect(page.locator('.kicker .badge')).toContainText('living');
+    await expect(page.locator('body.doc')).toBeVisible();
+    await expect(page.locator('#bk-fab')).toBeVisible();
+  });
+
+  test('markdown pages are indexed and searchable', async ({ page }) => {
+    await page.goto('/');
+    await page.locator('#bk-search').fill('re-litigates');
+    const hit = page.locator('.bk-hit').first();
+    await expect(hit).toContainText('Decision log');
+    await hit.click();
+    await expect(page).toHaveURL(/decisions\.md$/);
+  });
+
+  test('markdown page appears in drawer navigation with prev/next', async ({ page }) => {
+    await page.goto('/byakugan/decisions.md');
+    await page.locator('#bk-fab').click();
+    await expect(page.locator('#bk-drawer .bk-tree a.bk-current')).toContainText('Decision log');
+    await expect(page.locator('#bk-prev')).toContainText('Architecture Overview');
+    await expect(page.locator('#bk-next')).toContainText('Internals');
+  });
+});
+
 test.describe('API', () => {
   test('index.json exposes projects, titles, and text', async ({ request }) => {
     const res = await request.get('/api/index.json');
     expect(res.ok()).toBeTruthy();
     const idx = await res.json();
-    expect(idx.pageCount).toBe(2);
+    expect(idx.pageCount).toBe(3);
     const byakugan = idx.projects.find((p: any) => p.name === 'byakugan');
     expect(byakugan.pages.map((p: any) => p.title))
-      .toEqual(['Architecture Overview', 'Internals']);
+      .toEqual(['Architecture Overview', 'Decision log', 'Internals']);
   });
 
   test('path traversal is rejected', async ({ request }) => {

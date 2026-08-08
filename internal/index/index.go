@@ -4,6 +4,7 @@
 package index
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"sort"
@@ -12,6 +13,8 @@ import (
 	"time"
 
 	"golang.org/x/net/html"
+
+	"github.com/ebenlab/byakugan/internal/markdown"
 )
 
 // maxTextLen caps how much visible text per page is shipped to the search
@@ -87,7 +90,8 @@ func (ix *Index) Rebuild() error {
 			return nil
 		}
 		ext := strings.ToLower(filepath.Ext(name))
-		if ext != ".html" && ext != ".htm" {
+		isHTML := ext == ".html" || ext == ".htm"
+		if !isHTML && ext != ".md" {
 			return nil
 		}
 		rel, err := filepath.Rel(ix.root, path)
@@ -105,9 +109,19 @@ func (ix *Index) Rebuild() error {
 		if info, err := d.Info(); err == nil {
 			page.ModTime = info.ModTime()
 		}
-		if f, err := os.Open(path); err == nil {
-			page.Title, page.Headings, page.Text = extract(f)
-			f.Close()
+		if isHTML {
+			if f, err := os.Open(path); err == nil {
+				page.Title, page.Headings, page.Text = extract(f)
+				f.Close()
+			}
+		} else if src, err := os.ReadFile(path); err == nil {
+			// Markdown pages index exactly like HTML ones: render the body,
+			// then reuse the same extractor on the fragment.
+			meta, body := markdown.Parse(src)
+			if frag, err := markdown.ToHTML(body); err == nil {
+				_, page.Headings, page.Text = extract(bytes.NewReader(frag))
+			}
+			page.Title = markdown.Title(meta, body, strings.TrimSuffix(name, ext))
 		}
 		if page.Title == "" {
 			page.Title = strings.TrimSuffix(name, filepath.Ext(name))

@@ -104,6 +104,27 @@
     The docs folder stays the single source of truth; nothing is copied.</figcaption>
   </figure>
 
+  <p>The same shape in ASCII — the zero-cost diagram form: no SVG to parse,
+  greppable in the repo, diffable in review, and it renders as fast as text
+  because it <em>is</em> text. Use it for quick topologies; keep the
+  <code>.d-*</code> SVG grammar for figures that earn the polish.</p>
+
+  <figure class="plate">
+    <pre class="ascii">
+┌────────────┐ write N files  ┌────────────┐  fs events   ┌──────────────┐
+│ agent /    │ ─────────────▶ │ docs/      │ ─ ─ ─ ─ ─ ─▶ │ watcher      │
+│ editor     │                │ (truth)    │              │ 300 ms quiet │
+└────────────┘                └────────────┘              └──────┬───────┘
+                                    ▲                            │ once
+                                    │ read on request            ▼
+┌────────────┐  page + overlay ┌────┴───────┐   snapshot   ┌──────────────┐
+│ browser    │ ◀────────────── │ server     │ ◀─────────── │ index        │
+│            │ ◀ ─ ─ ─ ─ ─ ─ ─ │ mux · SSE  │              │ (immutable)  │
+└────────────┘  event: reload  └────────────┘              └──────────────┘</pre>
+    <figcaption><b>Fig 1b</b> — Fig 1 as ASCII. Solid arrows are synchronous,
+    dashed are async; the conventions carry over from the SVG grammar.</figcaption>
+  </figure>
+
   <table>
     <thead><tr><th>Package</th><th>Role</th><th>Key decision</th></tr></thead>
     <tbody>
@@ -195,6 +216,25 @@
   hundreds-of-pages corpora Byakugan targets, that is faster than any
   round-trip and keeps the server free of query logic. The landing page and
   the overlay drawer share the same index and the same ranking.</p>
+
+  <p>The whole contract between server and browser is this one payload:</p>
+
+<pre><code>GET /api/index.json
+{
+  "root": "/team/docs",
+  "pageCount": 3,
+  "generatedAt": "2026-08-08T14:03:11Z",
+  "projects": [{
+    "name": "byakugan",
+    "updatedAt": "2026-08-08T14:02:58Z",
+    "pages": [{
+      "path": "byakugan/architecture.html",
+      "title": "Architecture Overview",
+      "headings": ["Context", "System overview", "…"],
+      "text": "first 2,000 chars of visible text…"
+    }]
+  }]
+}</code></pre>
 </section>
 
 <section>
