@@ -14,6 +14,11 @@ project tracker (Linear) as-is. Status reflects 2026-08-08.
 - [x] CI: vet + test + build on macOS/Linux/Windows, cross-compile check
 - [x] Playwright e2e suite (10 tests) running on every PR
 - [x] Agent/contributor guidelines: CLAUDE.md, CONTRIBUTING.md, repo skills
+- [x] Agent-facing subcommands: `help`, `version`, `style`, `rules`, `template <kind>`
+- [x] `byakugan style`: shared doc design system (doc.css) printable to stdout
+- [x] `byakugan rules`: authoring guide (skeleton, `.d-*` diagram grammar, conventions)
+- [x] `byakugan template prd|adr|architecture|overview`: doc generation prompt templates
+- [x] README: CLI reference + "For agents" workflow
 - [x] Release pipeline: GoReleaser on `v*` tags
 - [ ] Tag and publish v0.1.0
 

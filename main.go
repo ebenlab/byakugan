@@ -4,21 +4,30 @@
 // Usage:
 //
 //	byakugan [flags] [folder]
+//	byakugan <subcommand>
 //
 // The folder defaults to the current directory. Every first-level
 // subdirectory is treated as a project; every HTML file inside it becomes a
 // searchable, navigable page.
+//
+// The subcommands (help, version, style, rules, template) are agent-facing:
+// they print the shared doc stylesheet, the authoring rules, and doc
+// generation prompt templates so coding agents can produce pages that match
+// the design system.
 package main
 
 import (
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 
+	"github.com/ebenlab/byakugan/internal/agentkit"
 	"github.com/ebenlab/byakugan/internal/index"
 	"github.com/ebenlab/byakugan/internal/server"
 	"github.com/ebenlab/byakugan/internal/watcher"
@@ -30,22 +39,119 @@ var version = "dev"
 func main() {
 	log.SetFlags(0)
 
-	port := flag.Int("port", 4664, "port to listen on")
-	host := flag.String("host", "127.0.0.1", "interface to bind (use 0.0.0.0 to expose on the network)")
-	open := flag.Bool("open", false, "open the site in the default browser after starting")
-	noWatch := flag.Bool("no-watch", false, "disable file watching and live reload")
-	showVersion := flag.Bool("version", false, "print version and exit")
-	flag.Usage = usage
-	flag.Parse()
+	if handled, code := run(os.Args[1:], os.Stdout, os.Stderr); handled {
+		os.Exit(code)
+	}
+	serve(os.Args[1:])
+}
 
-	if *showVersion {
+// run dispatches the agent-facing subcommands: help, version, style, rules,
+// and template. It reports handled=false when the first argument names no
+// subcommand, in which case the caller falls through to serve mode — so
+// `byakugan [flags] [folder]` keeps working unchanged.
+func run(args []string, stdout, stderr io.Writer) (handled bool, code int) {
+	if len(args) == 0 {
+		return false, 0
+	}
+	switch args[0] {
+	case "help":
+		fs, _ := newServeFlags(stdout)
+		printUsage(stdout, fs)
+		return true, 0
+	case "version":
+		fmt.Fprintln(stdout, "byakugan", version)
+		return true, 0
+	case "style":
+		stdout.Write(agentkit.StyleCSS())
+		return true, 0
+	case "rules":
+		stdout.Write(agentkit.Rules())
+		return true, 0
+	case "template":
+		if len(args) < 2 {
+			fmt.Fprintf(stderr, "byakugan template <kind> — available kinds: %s\n", strings.Join(agentkit.Kinds(), ", "))
+			return true, 2
+		}
+		tpl, err := agentkit.Template(args[1])
+		if err != nil {
+			fmt.Fprintf(stderr, "byakugan: %v — available kinds: %s\n", err, strings.Join(agentkit.Kinds(), ", "))
+			return true, 2
+		}
+		stdout.Write(tpl)
+		return true, 0
+	}
+	return false, 0
+}
+
+// serveOptions holds the parsed serve-mode flags.
+type serveOptions struct {
+	port    int
+	host    string
+	open    bool
+	noWatch bool
+	version bool
+}
+
+// newServeFlags defines the serve-mode flag set. Usage and parse errors are
+// written to w.
+func newServeFlags(w io.Writer) (*flag.FlagSet, *serveOptions) {
+	opts := &serveOptions{}
+	fs := flag.NewFlagSet("byakugan", flag.ExitOnError)
+	fs.SetOutput(w)
+	fs.IntVar(&opts.port, "port", 4664, "port to listen on")
+	fs.StringVar(&opts.host, "host", "127.0.0.1", "interface to bind (use 0.0.0.0 to expose on the network)")
+	fs.BoolVar(&opts.open, "open", false, "open the site in the default browser after starting")
+	fs.BoolVar(&opts.noWatch, "no-watch", false, "disable file watching and live reload")
+	fs.BoolVar(&opts.version, "version", false, "print version and exit")
+	fs.Usage = func() { printUsage(w, fs) }
+	return fs, opts
+}
+
+// printUsage writes the full usage text — serve flags plus subcommands — to w.
+func printUsage(w io.Writer, fs *flag.FlagSet) {
+	fmt.Fprintf(w, `byakugan — a tiny live server for architecture docs and PRDs
+
+Usage:
+  byakugan [flags] [folder]   serve a docs folder (default ".")
+  byakugan <subcommand>
+
+Subcommands:
+  help             print this help
+  version          print version and exit
+  style            print the shared doc stylesheet (doc.css) to stdout
+  rules            print the doc authoring guide for agents
+  template <kind>  print a doc generation prompt template
+                   kinds: %s
+
+Flags:
+`, strings.Join(agentkit.Kinds(), ", "))
+	fs.SetOutput(w)
+	fs.PrintDefaults()
+	fmt.Fprintf(w, `
+Examples:
+  byakugan ./docs
+  byakugan --port 8080 --open ~/team/architecture
+  byakugan style > docs/_shared/doc.css
+  byakugan template adr
+`)
+}
+
+// serve runs the live server: parse flags, index the folder, watch it, and
+// listen until interrupted.
+func serve(args []string) {
+	fs, opts := newServeFlags(os.Stderr)
+	// ExitOnError: Parse exits the process on a bad flag, so the returned
+	// error is always nil here.
+	_ = fs.Parse(args)
+
+	if opts.version {
 		fmt.Println("byakugan", version)
 		return
 	}
 
 	root := "."
-	if flag.NArg() > 0 {
-		root = flag.Arg(0)
+	if fs.NArg() > 0 {
+		root = fs.Arg(0)
 	}
 	root, err := filepath.Abs(root)
 	if err != nil {
@@ -66,7 +172,7 @@ func main() {
 
 	srv := server.New(idx, version)
 
-	if !*noWatch {
+	if !opts.noWatch {
 		w, err := watcher.New(root, func() {
 			if err := idx.Rebuild(); err != nil {
 				log.Printf("byakugan: re-index failed: %v", err)
@@ -81,33 +187,17 @@ func main() {
 		}
 	}
 
-	addr := fmt.Sprintf("%s:%d", *host, *port)
+	addr := fmt.Sprintf("%s:%d", opts.host, opts.port)
 	url := fmt.Sprintf("http://%s", addr)
 	log.Printf("byakugan %s — serving %s", version, root)
 	log.Printf("→ %s", url)
 
-	if *open {
+	if opts.open {
 		go openBrowser(url)
 	}
 	if err := srv.ListenAndServe(addr); err != nil {
 		log.Fatalf("byakugan: %v", err)
 	}
-}
-
-func usage() {
-	fmt.Fprintf(os.Stderr, `byakugan — a tiny live server for architecture docs and PRDs
-
-Usage:
-  byakugan [flags] [folder]
-
-Flags:
-`)
-	flag.PrintDefaults()
-	fmt.Fprintf(os.Stderr, `
-Examples:
-  byakugan ./docs
-  byakugan --port 8080 --open ~/team/architecture
-`)
 }
 
 // openBrowser launches the platform's default browser at url. Failures are

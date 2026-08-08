@@ -7,6 +7,16 @@
   if (window.__byakugan) return; // idempotent if a page is served twice
   window.__byakugan = true;
 
+  // Apply a saved explicit theme immediately so Byakugan UI paints right on
+  // first frame. Only bk-scoped variables react to this attribute; the host
+  // document's own colors and styles are untouched (see app.css).
+  try {
+    var saved = localStorage.getItem('bk-theme');
+    if (saved === 'light' || saved === 'dark') {
+      document.documentElement.setAttribute('data-bk-theme', saved);
+    }
+  } catch (_) { /* storage unavailable: stay on auto */ }
+
   function load(tag, attrs) {
     var el = document.createElement(tag);
     for (var k in attrs) el.setAttribute(k, attrs[k]);
@@ -31,6 +41,7 @@
     drawer.id = 'bk-drawer';
     drawer.innerHTML =
       '<div class="bk-drawer-head"><a href="/"><span class="bk-eye">👁️</span> Byakugan</a>' +
+      '<button class="bk-theme-btn" type="button"></button>' +
       '<button class="bk-drawer-close" title="Close (Esc)">×</button></div>' +
       '<div class="bk-drawer-search"><input type="search" placeholder="Search docs…" autocomplete="off"></div>' +
       '<div class="bk-tree"></div>' +
@@ -49,6 +60,7 @@
     function close() { drawer.classList.remove('bk-open'); }
     fab.addEventListener('click', open);
     drawer.querySelector('.bk-drawer-close').addEventListener('click', close);
+    BK.themeInit(drawer.querySelector('.bk-theme-btn'));
     document.addEventListener('keydown', function (e) {
       var typing = /^(input|textarea|select)$/i.test((document.activeElement || {}).tagName || '');
       if (e.key === 'Escape') close();
@@ -63,8 +75,9 @@
       (index.projects || []).forEach(function (proj) {
         var pages = filter ? BK.search({ projects: [proj] }, filter, 100) : proj.pages;
         if (!pages.length) return;
-        html += '<div class="bk-tree-project">' +
-          (proj.name === '' ? 'Top level' : BK.highlight(proj.name, filter || '')) + '</div>';
+        html += '<div class="bk-tree-project"><span>' +
+          (proj.name === '' ? 'Top level' : BK.highlight(proj.name, filter || '')) +
+          '</span><span class="bk-tree-count">' + pages.length + '</span></div>';
         pages.forEach(function (p) {
           html += '<a href="/' + encodeURI(p.path) + '"' +
             (p.path === current ? ' class="bk-current"' : '') + '>' +

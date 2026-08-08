@@ -6,6 +6,15 @@
 <title>Byakugan</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%91%81%EF%B8%8F%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="/__byakugan/app.css">
+<script>
+// Apply a saved explicit theme before first paint to avoid a flash.
+(function () {
+  try {
+    var t = localStorage.getItem('bk-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-bk-theme', t);
+  } catch (_) { /* storage unavailable: stay on auto */ }
+})();
+</script>
 </head>
 <body class="bk-landing">
 <header class="bk-header">
@@ -13,6 +22,7 @@
   <input id="bk-search" class="bk-search" type="search"
          placeholder="Search titles, headings, content…  ( / )" autocomplete="off">
   <span class="bk-meta" id="bk-meta"></span>
+  <button id="bk-theme" class="bk-theme-btn" type="button"></button>
 </header>
 <main class="bk-main">
   <div id="bk-results" class="bk-results" hidden></div>

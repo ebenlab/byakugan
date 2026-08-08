@@ -60,5 +60,67 @@
     return esc.replace(new RegExp('(' + tokens.join('|') + ')', 'gi'), '<mark>$1</mark>');
   }
 
-  window.BK = { search: search, snippet: snippet, highlight: highlight };
+  // timeAgo renders an ISO timestamp as a short relative phrase ("3h ago").
+  function timeAgo(iso) {
+    var t = Date.parse(iso || '');
+    if (isNaN(t)) return '';
+    var s = Math.max(0, (Date.now() - t) / 1000);
+    if (s < 60) return 'just now';
+    if (s < 3600) return Math.floor(s / 60) + 'm ago';
+    if (s < 86400) return Math.floor(s / 3600) + 'h ago';
+    if (s < 86400 * 30) return Math.floor(s / 86400) + 'd ago';
+    return new Date(t).toLocaleDateString();
+  }
+
+  // ---- Theme: three-state (auto → light → dark), persisted in localStorage.
+  // An explicit choice is written as data-bk-theme on <html>; app.css scopes
+  // every color variable to Byakugan roots, so host documents are unaffected.
+  var THEME_KEY = 'bk-theme';
+  var THEME_ORDER = ['auto', 'light', 'dark'];
+  var THEME_GLYPH = { auto: '◐', light: '☀', dark: '☾' };
+  var themeButtons = [];
+
+  function themeGet() {
+    try {
+      var t = localStorage.getItem(THEME_KEY);
+      return t === 'light' || t === 'dark' ? t : 'auto';
+    } catch (_) { return 'auto'; }
+  }
+
+  function themeApply(t) {
+    var el = document.documentElement;
+    if (t === 'light' || t === 'dark') el.setAttribute('data-bk-theme', t);
+    else el.removeAttribute('data-bk-theme');
+  }
+
+  function themeSet(t) {
+    try { localStorage.setItem(THEME_KEY, t); } catch (_) { /* private mode */ }
+    themeApply(t);
+    themeButtons.forEach(paintThemeButton);
+  }
+
+  function paintThemeButton(btn) {
+    var t = themeGet();
+    btn.textContent = THEME_GLYPH[t];
+    btn.setAttribute('data-bk-mode', t);
+    btn.setAttribute('aria-label', 'Theme: ' + t);
+    btn.title = 'Theme: ' + t + ' (click to change)';
+  }
+
+  // themeInit wires a toggle button and normalizes the attribute on <html>.
+  function themeInit(btn) {
+    themeApply(themeGet());
+    if (!btn) return;
+    themeButtons.push(btn);
+    paintThemeButton(btn);
+    btn.addEventListener('click', function () {
+      var next = THEME_ORDER[(THEME_ORDER.indexOf(themeGet()) + 1) % THEME_ORDER.length];
+      themeSet(next);
+    });
+  }
+
+  window.BK = {
+    search: search, snippet: snippet, highlight: highlight,
+    timeAgo: timeAgo, themeInit: themeInit, themeGet: themeGet
+  };
 })();

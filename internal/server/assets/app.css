@@ -1,5 +1,11 @@
-/* Byakugan UI — shared by the landing page and the injected overlay. */
-:root {
+/* Byakugan UI — shared by the landing page and the injected overlay.
+   Theme variables are scoped to the Byakugan roots (.bk-landing, #bk-fab,
+   #bk-drawer) — never :root — so the injected overlay can never recolor a
+   host document. An explicit user choice, stored as data-bk-theme on <html>,
+   beats the OS scheme in both directions:
+     - [data-bk-theme="dark"]  forces dark even when the OS is light;
+     - [data-bk-theme="light"] is excluded from the dark media block. */
+.bk-landing, #bk-fab, #bk-drawer {
   --bk-bg: #fafafa;
   --bk-fg: #1a1a1f;
   --bk-muted: #6b6b76;
@@ -9,9 +15,26 @@
   --bk-accent-soft: #f0ecff;
   --bk-mark: #fff3bf;
   --bk-shadow: 0 1px 3px rgba(20, 20, 40, .07), 0 8px 24px rgba(20, 20, 40, .06);
+  color-scheme: light;
+}
+:root[data-bk-theme="dark"] .bk-landing,
+:root[data-bk-theme="dark"] #bk-fab,
+:root[data-bk-theme="dark"] #bk-drawer {
+  --bk-bg: #101014;
+  --bk-fg: #ececf1;
+  --bk-muted: #9a9aa6;
+  --bk-card: #18181f;
+  --bk-border: #2a2a33;
+  --bk-accent: #a18bff;
+  --bk-accent-soft: #241f3d;
+  --bk-mark: #4d4320;
+  --bk-shadow: 0 1px 3px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .3);
+  color-scheme: dark;
 }
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-bk-theme="light"]) .bk-landing,
+  :root:not([data-bk-theme="light"]) #bk-fab,
+  :root:not([data-bk-theme="light"]) #bk-drawer {
     --bk-bg: #101014;
     --bk-fg: #ececf1;
     --bk-muted: #9a9aa6;
@@ -21,11 +44,13 @@
     --bk-accent-soft: #241f3d;
     --bk-mark: #4d4320;
     --bk-shadow: 0 1px 3px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .3);
+    color-scheme: dark;
   }
 }
 
-/* The UA's [hidden] rule loses to display:grid/flex on classes; restore it. */
-[hidden] { display: none !important; }
+/* The UA's [hidden] rule loses to display:grid/flex on classes; restore it.
+   Scoped to the landing page so it can never affect a host document. */
+.bk-landing [hidden] { display: none !important; }
 
 .bk-landing {
   margin: 0;
@@ -47,7 +72,7 @@
 }
 .bk-eye { filter: saturate(.4); }
 .bk-search {
-  flex: 1; max-width: 520px;
+  flex: 1; max-width: 520px; box-sizing: border-box;
   padding: 8px 14px;
   border: 1px solid var(--bk-border); border-radius: 8px;
   background: var(--bk-card); color: var(--bk-fg);
@@ -55,6 +80,17 @@
 }
 .bk-search:focus { border-color: var(--bk-accent); }
 .bk-meta { color: var(--bk-muted); font-size: 13px; margin-left: auto; white-space: nowrap; }
+
+/* Three-state theme toggle (auto → light → dark), landing header + drawer. */
+.bk-theme-btn {
+  flex: none; width: 34px; height: 34px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--bk-border); border-radius: 8px;
+  background: var(--bk-card); color: var(--bk-fg);
+  font: 15px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  cursor: pointer; padding: 0;
+}
+.bk-theme-btn:hover { border-color: var(--bk-accent); color: var(--bk-accent); }
 
 .bk-main { max-width: 1080px; margin: 0 auto; padding: 28px 24px 80px; }
 
@@ -67,19 +103,31 @@
   border: 1px solid var(--bk-border); border-radius: 12px;
   box-shadow: var(--bk-shadow);
   padding: 18px 20px;
+  transition: border-color .12s ease, transform .12s ease;
 }
+.bk-card:hover { border-color: var(--bk-accent); transform: translateY(-1px); }
 .bk-card h2 {
-  margin: 0 0 4px; font-size: 16px; letter-spacing: -.01em;
+  margin: 0; font-size: 16px; letter-spacing: -.01em;
   display: flex; align-items: baseline; gap: 8px;
 }
 .bk-card h2 a { color: var(--bk-fg); text-decoration: none; }
 .bk-card h2 a:hover { color: var(--bk-accent); }
-.bk-count { color: var(--bk-muted); font-size: 12.5px; font-weight: 400; }
+.bk-count {
+  margin-left: auto; flex: none;
+  color: var(--bk-muted); font-size: 11.5px; font-weight: 600;
+  border: 1px solid var(--bk-border); border-radius: 999px;
+  padding: 1px 8px; white-space: nowrap;
+}
+.bk-card-updated { color: var(--bk-muted); font-size: 12px; margin-top: 3px; }
 .bk-card ul { list-style: none; margin: 10px 0 0; padding: 0; }
-.bk-card li { margin: 3px 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.bk-card li a { color: var(--bk-muted); text-decoration: none; font-size: 13.5px; }
-.bk-card li a:hover { color: var(--bk-accent); }
-.bk-more { font-size: 12.5px; color: var(--bk-accent); }
+.bk-card li { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bk-card li a {
+  display: block; padding: 4px 8px; margin: 0 -8px; border-radius: 6px;
+  color: var(--bk-muted); text-decoration: none; font-size: 13.5px;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.bk-card li a:hover { color: var(--bk-accent); background: var(--bk-accent-soft); }
+.bk-more { display: inline-block; margin-top: 6px; font-size: 12.5px; color: var(--bk-accent); }
 
 .bk-results { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
 .bk-hit {
@@ -109,7 +157,7 @@
 #bk-fab:hover { border-color: var(--bk-accent); }
 #bk-drawer {
   position: fixed; inset: 0 auto 0 0; z-index: 2147483001;
-  width: min(360px, 90vw);
+  width: min(360px, 92vw);
   background: var(--bk-card); color: var(--bk-fg);
   border-right: 1px solid var(--bk-border);
   box-shadow: var(--bk-shadow);
@@ -118,9 +166,18 @@
   font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 #bk-drawer.bk-open { transform: translateX(0); }
-.bk-drawer-head { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--bk-border); }
-.bk-drawer-head a { font-weight: 700; color: var(--bk-fg); text-decoration: none; }
-.bk-drawer-close { margin-left: auto; cursor: pointer; border: 0; background: none; color: var(--bk-muted); font-size: 18px; }
+.bk-drawer-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 14px 12px 16px; border-bottom: 1px solid var(--bk-border);
+}
+.bk-drawer-head a { font-weight: 700; color: var(--bk-fg); text-decoration: none; margin-right: auto; }
+.bk-drawer-close {
+  flex: none; width: 34px; height: 34px;
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer; border: 0; border-radius: 8px;
+  background: none; color: var(--bk-muted); font-size: 19px; padding: 0;
+}
+.bk-drawer-close:hover { background: var(--bk-accent-soft); color: var(--bk-fg); }
 .bk-drawer-search { margin: 12px 16px 4px; }
 .bk-drawer-search input {
   width: 100%; box-sizing: border-box; padding: 7px 12px;
@@ -129,14 +186,30 @@
 }
 .bk-drawer-search input:focus { border-color: var(--bk-accent); }
 .bk-tree { flex: 1; overflow-y: auto; padding: 8px 8px 16px; }
-.bk-tree-project { margin: 8px 8px 2px; font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--bk-muted); }
+.bk-tree-project {
+  display: flex; align-items: center; gap: 7px;
+  margin: 12px 8px 3px; padding-top: 10px;
+  border-top: 1px solid var(--bk-border);
+  font-size: 11.5px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--bk-muted);
+}
+.bk-tree-project:first-child { border-top: 0; margin-top: 4px; padding-top: 0; }
+.bk-tree-count {
+  flex: none; font-size: 10.5px; font-weight: 600; letter-spacing: 0;
+  color: var(--bk-muted); background: var(--bk-bg);
+  border: 1px solid var(--bk-border); border-radius: 999px; padding: 0 7px;
+}
 .bk-tree a {
   display: block; padding: 5px 10px; margin: 1px 0;
   color: var(--bk-fg); text-decoration: none; border-radius: 6px;
   font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .bk-tree a:hover { background: var(--bk-accent-soft); }
-.bk-tree a.bk-current { background: var(--bk-accent-soft); color: var(--bk-accent); font-weight: 600; }
+.bk-tree a:active { background: var(--bk-accent-soft); color: var(--bk-accent); }
+.bk-tree a.bk-current {
+  background: var(--bk-accent-soft); color: var(--bk-accent); font-weight: 600;
+  box-shadow: inset 2px 0 0 var(--bk-accent);
+}
 .bk-drawer-foot {
   display: flex; gap: 8px; padding: 12px 16px;
   border-top: 1px solid var(--bk-border); font-size: 13px;
@@ -145,6 +218,35 @@
   flex: 1; text-align: center; padding: 7px 0;
   border: 1px solid var(--bk-border); border-radius: 7px;
   color: var(--bk-fg); text-decoration: none;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .bk-drawer-foot a:hover { border-color: var(--bk-accent); color: var(--bk-accent); }
 .bk-drawer-foot a[aria-disabled="true"] { opacity: .35; pointer-events: none; }
+
+/* ---- Phone widths: reflowed header, single-column cards, 44px targets ---- */
+@media (max-width: 720px) {
+  .bk-header { flex-wrap: wrap; gap: 10px 12px; padding: 10px 16px; }
+  .bk-logo { font-size: 16px; }
+  .bk-meta { font-size: 12px; }
+  /* Search drops to its own full-width row below logo + meta + toggle. */
+  .bk-search { order: 1; flex: 1 1 100%; max-width: none; min-height: 44px; }
+  .bk-theme-btn { width: 44px; height: 44px; }
+  .bk-main { padding: 20px 16px 110px; }
+  .bk-projects { grid-template-columns: 1fr; }
+  .bk-card { padding: 16px; }
+  .bk-card li a { padding: 10px 8px; font-size: 14px; }
+  .bk-hit { padding: 14px 16px; }
+
+  #bk-fab {
+    left: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    min-height: 44px; padding: 11px 16px;
+  }
+  #bk-drawer { width: min(360px, 92vw); }
+  .bk-drawer-close { width: 44px; height: 44px; }
+  .bk-drawer-search input { min-height: 44px; }
+  .bk-tree a {
+    min-height: 44px; box-sizing: border-box;
+    padding: 12px; line-height: 20px;
+  }
+  .bk-drawer-foot a { padding: 12px 0; }
+}

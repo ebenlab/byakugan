@@ -33,10 +33,12 @@
       var card = document.createElement('div');
       card.className = 'bk-card';
       var shown = proj.pages.slice(0, 8);
+      var ago = BK.timeAgo(proj.updatedAt);
       card.innerHTML =
         '<h2><a href="/' + encodeURI(proj.name) + (proj.name ? '/' : '') + '">' +
         BK.highlight(projectLabel(proj.name), '') + '</a>' +
         '<span class="bk-count">' + proj.pages.length + ' page' + (proj.pages.length === 1 ? '' : 's') + '</span></h2>' +
+        (ago ? '<div class="bk-card-updated">Updated ' + ago + '</div>' : '') +
         '<ul>' + shown.map(function (p) {
           return '<li><a href="/' + encodeURI(p.path) + '">' + BK.highlight(p.title, '') + '</a></li>';
         }).join('') + '</ul>' +
@@ -68,6 +70,8 @@
     $results.hidden = false;
     $projects.hidden = true;
   }
+
+  BK.themeInit(document.getElementById('bk-theme'));
 
   $search.addEventListener('input', renderSearch);
   document.addEventListener('keydown', function (e) {
