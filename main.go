@@ -17,6 +17,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io"
@@ -29,6 +30,7 @@ import (
 
 	"github.com/ebenlab/byakugan/internal/agentkit"
 	"github.com/ebenlab/byakugan/internal/index"
+	"github.com/ebenlab/byakugan/internal/selfupdate"
 	"github.com/ebenlab/byakugan/internal/server"
 	"github.com/ebenlab/byakugan/internal/watcher"
 )
@@ -61,6 +63,12 @@ func run(args []string, stdout, stderr io.Writer) (handled bool, code int) {
 	case "version":
 		fmt.Fprintln(stdout, "byakugan", version)
 		return true, 0
+	case "upgrade":
+		if err := selfupdate.New().Upgrade(context.Background(), version, stdout); err != nil {
+			fmt.Fprintf(stderr, "byakugan: %v\n", err)
+			return true, 1
+		}
+		return true, 0
 	case "style":
 		stdout.Write(agentkit.StyleCSS())
 		return true, 0
@@ -85,11 +93,12 @@ func run(args []string, stdout, stderr io.Writer) (handled bool, code int) {
 
 // serveOptions holds the parsed serve-mode flags.
 type serveOptions struct {
-	port    int
-	host    string
-	open    bool
-	noWatch bool
-	version bool
+	port     int
+	host     string
+	open     bool
+	noWatch  bool
+	noUpdate bool
+	version  bool
 }
 
 // newServeFlags defines the serve-mode flag set. Usage and parse errors are
@@ -102,6 +111,7 @@ func newServeFlags(w io.Writer) (*flag.FlagSet, *serveOptions) {
 	fs.StringVar(&opts.host, "host", "127.0.0.1", "interface to bind (use 0.0.0.0 to expose on the network)")
 	fs.BoolVar(&opts.open, "open", false, "open the site in the default browser after starting")
 	fs.BoolVar(&opts.noWatch, "no-watch", false, "disable file watching and live reload")
+	fs.BoolVar(&opts.noUpdate, "no-update-check", false, "disable the startup check for a newer release")
 	fs.BoolVar(&opts.version, "version", false, "print version and exit")
 	fs.Usage = func() { printUsage(w, fs) }
 	return fs, opts
@@ -122,6 +132,7 @@ Subcommands:
   rules            print the doc authoring guide for agents
   template <kind>  print a doc generation prompt template
                    kinds: %s
+  upgrade          replace this binary with the latest release
 
 Flags:
 `, strings.Join(agentkit.Kinds(), ", "))
@@ -191,6 +202,14 @@ func serve(args []string) {
 	url := fmt.Sprintf("http://%s", addr)
 	log.Printf("byakugan %s — serving %s", version, root)
 	log.Printf("→ %s", url)
+
+	if !opts.noUpdate {
+		// Non-blocking; silent when offline or already current. Opt out with
+		// --no-update-check or BYAKUGAN_NO_UPDATE_CHECK=1.
+		selfupdate.Notice(version, func(tag string) {
+			log.Printf("↑ %s is available (you have %s) — run 'byakugan upgrade'", tag, version)
+		})
+	}
 
 	if opts.open {
 		go openBrowser(url)
