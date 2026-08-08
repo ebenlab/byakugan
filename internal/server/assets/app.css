@@ -14,7 +14,7 @@
   --bk-accent: #111113;
   --bk-accent-soft: #efeff1;
   --bk-mark: #e4e4e7;
-  --bk-shadow: 0 1px 3px rgba(0, 0, 0, .06), 0 8px 24px rgba(0, 0, 0, .05);
+  --bk-shadow: none;
   color-scheme: light;
 }
 :root[data-bk-theme="dark"] .bk-landing,
@@ -28,7 +28,7 @@
   --bk-accent: #ededf0;
   --bk-accent-soft: #26262b;
   --bk-mark: #3a3a40;
-  --bk-shadow: 0 1px 3px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .3);
+  --bk-shadow: none;
   color-scheme: dark;
 }
 @media (prefers-color-scheme: dark) {
@@ -43,7 +43,7 @@
     --bk-accent: #ededf0;
     --bk-accent-soft: #26262b;
     --bk-mark: #3a3a40;
-    --bk-shadow: 0 1px 3px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .3);
+    --bk-shadow: none;
     color-scheme: dark;
   }
 }
@@ -105,9 +105,9 @@
   border: 1px solid var(--bk-border); border-radius: 12px;
   box-shadow: var(--bk-shadow);
   padding: 18px 20px;
-  transition: border-color .12s ease, transform .12s ease;
+  transition: border-color .12s ease;
 }
-.bk-card:hover { border-color: var(--bk-accent); transform: translateY(-1px); }
+.bk-card:hover { border-color: var(--bk-accent); }
 .bk-card h2 {
   margin: 0; font-size: 16px; letter-spacing: -.01em;
   display: flex; align-items: baseline; gap: 8px;
