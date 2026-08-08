@@ -12,6 +12,8 @@ project tracker (Linear) as-is. Status reflects 2026-08-08.
 - [x] Navigation overlay injected into every page (tree, search, prev/next, `b` shortcut)
 - [x] Live reload: recursive watcher, debounced re-index, SSE push
 - [x] CI: vet + test + build on macOS/Linux/Windows, cross-compile check
+- [x] Playwright e2e suite (10 tests) running on every PR
+- [x] Agent/contributor guidelines: CLAUDE.md, CONTRIBUTING.md, repo skills
 - [x] Release pipeline: GoReleaser on `v*` tags
 - [ ] Tag and publish v0.1.0
 
