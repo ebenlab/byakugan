@@ -160,14 +160,15 @@ running.
 docs/
 ├── payments/               ← project
 │   ├── architecture.html
-│   └── adr-001-ledger.html
+│   ├── adr-001-ledger.html
+│   └── decision-log.md     ← Markdown is a first-class page too
 ├── onboarding/             ← project
 │   └── prd-signup-flow.html
 └── overview.html           ← top-level document
 ```
 
-Anything that isn't HTML (images, CSS, PDFs) is served as-is, so pages can
-reference their own assets with relative links. Hidden folders and
+Anything that isn't HTML or Markdown (images, CSS, PDFs) is served as-is, so
+pages can reference their own assets with relative links. Hidden folders and
 `node_modules` are ignored.
 
 ## Development

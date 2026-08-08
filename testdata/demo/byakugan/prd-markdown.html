@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PRD: Markdown Pages</title>
+<link rel="stylesheet" href="../_shared/doc.css">
+</head>
+<body class="doc">
+
+<header class="doc-head">
+  <p class="kicker">byakugan · product requirements · <span class="badge badge--accepted">shipped</span> · 2026-08-08</p>
+  <h1>PRD: Markdown Pages</h1>
+  <p class="lede">Agents and engineers already have Markdown lying around.
+  Serve it as a first-class page — rendered, indexed, navigable — without
+  letting Byakugan drift into being a static-site generator.</p>
+</header>
+
+<main>
+<section>
+  <h2>Problem</h2>
+  <p>Byakugan only understood HTML. A docs folder in the wild is rarely that
+  pure: READMEs, meeting notes, decision logs, and agent scratch output all
+  arrive as <code>.md</code>. Those files either sat invisible next to the
+  HTML dossier or were served as raw text — unstyled, unindexed, and outside
+  navigation. The folder stopped being the single place to look, which is the
+  one promise this tool makes.</p>
+</section>
+
+<section>
+  <h2>Proposal</h2>
+  <p>Render Markdown server-side into the same doc skeleton every other page
+  uses, at request time, from the file on disk. One new internal package, one
+  new dependency (goldmark: pure Go, zero transitive dependencies), and no
+  new concepts for the reader — a Markdown page looks, searches, and
+  navigates exactly like an HTML one.</p>
+
+  <figure class="plate">
+    <svg class="diagram" viewBox="0 0 780 150" role="img" aria-label="Markdown request flow">
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 0L10 5L0 10z" class="d-arrhead"/>
+        </marker>
+      </defs>
+      <rect class="d-store" x="20" y="45" width="115" height="56" rx="10"/>
+      <text class="d-title" x="77" y="69">notes.md</text>
+      <text class="d-sub" x="77" y="85">on disk, untouched</text>
+
+      <rect class="d-box" x="180" y="45" width="115" height="56" rx="8"/>
+      <text class="d-title" x="237" y="69">front matter</text>
+      <text class="d-sub" x="237" y="85">title · status · date</text>
+
+      <rect class="d-box" x="340" y="45" width="115" height="56" rx="8"/>
+      <text class="d-title" x="397" y="69">goldmark</text>
+      <text class="d-sub" x="397" y="85">CommonMark + GFM</text>
+
+      <rect class="d-box" x="500" y="45" width="115" height="56" rx="8"/>
+      <text class="d-title" x="557" y="69">skeleton</text>
+      <text class="d-sub" x="557" y="85">kicker · h1 · doc.css</text>
+
+      <rect class="d-actor" x="660" y="45" width="100" height="56" rx="8"/>
+      <text class="d-title" x="710" y="69">browser</text>
+      <text class="d-sub" x="710" y="85">overlay injected</text>
+
+      <line class="d-flow" x1="135" y1="73" x2="174" y2="73" marker-end="url(#arr)"/>
+      <line class="d-flow" x1="295" y1="73" x2="334" y2="73" marker-end="url(#arr)"/>
+      <line class="d-flow" x1="455" y1="73" x2="494" y2="73" marker-end="url(#arr)"/>
+      <line class="d-flow" x1="615" y1="73" x2="654" y2="73" marker-end="url(#arr)"/>
+    </svg>
+    <figcaption><b>Fig 1</b> — request-time pipeline. Nothing is generated to
+    disk; the folder stays the single source of truth.</figcaption>
+  </figure>
+
+  <p>The stylesheet ships inside the binary at
+  <code>/__byakugan/doc.css</code>, so a bare folder of <code>.md</code> files
+  renders fully styled with zero setup — the strongest version of the
+  zero-config promise. Front matter is deliberately capped at three keys:</p>
+
+<pre><code>---
+title: Decision log     # else: first "# heading", else: filename
+status: living          # renders as a kicker badge
+date: 2026-08-08
+---</code></pre>
+</section>
+
+<section>
+  <h2>Requirements and status</h2>
+  <table>
+    <thead><tr><th>Requirement</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>GFM tables, strikethrough, autolinks render correctly</td><td>shipped, e2e-tested</td></tr>
+      <tr><td>Indexed and ranked identically to HTML pages</td><td>shipped — rendered first, then the shared extractor runs</td></tr>
+      <tr><td>Overlay, prev/next, live reload work unchanged</td><td>shipped, e2e-tested</td></tr>
+      <tr><td>Works in folders with no <code>_shared/doc.css</code></td><td>shipped — stylesheet served from the binary</td></tr>
+      <tr><td>Binary growth within budget (≤ 1.5 MB)</td><td>met — one dependency, zero transitive</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2>Out of scope — permanently</h2>
+  <div class="callout callout--risk">
+    <strong>The boundary</strong>
+    <p>No configuration, no templates or themes, no syntax highlighting, no
+    table-of-contents generation, no taxonomies. Each of those is the first
+    step toward being a worse Hugo. The moment a Markdown need exceeds this
+    scope, the answer is: generate HTML — <code>byakugan template</code>
+    exists precisely for that.</p>
+  </div>
+  <p>See the <a href="decisions.md">decision log</a> (itself a Markdown page —
+  this feature dogfooding itself) and the
+  <a href="architecture.html">architecture overview</a> for where the
+  rendering sits in the pipeline.</p>
+</section>
+</main>
+
+<footer class="doc-foot">byakugan · PRD · shipped in v0.4.0 · style: ../_shared/doc.css</footer>
+</body>
+</html>

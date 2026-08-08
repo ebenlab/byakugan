@@ -11,7 +11,7 @@ test.describe('landing page', () => {
     await page.goto('/');
     await expect(page.locator('.bk-card')).toHaveCount(1);
     await expect(page.getByRole('link', { name: 'byakugan', exact: true })).toBeVisible();
-    await expect(page.locator('#bk-meta')).toContainText('3 pages');
+    await expect(page.locator('#bk-meta')).toContainText('4 pages');
   });
 
   test('search returns ranked hits with highlights and hides the sections', async ({ page }) => {
@@ -164,7 +164,7 @@ test.describe('navigation affordances', () => {
     const counts = page.locator('#bk-drawer .bk-tree-count');
     await expect(counts).toHaveCount(1);
     const byakugan = page.locator('#bk-drawer .bk-tree-project', { hasText: 'byakugan' });
-    await expect(byakugan.locator('.bk-tree-count')).toHaveText('3');
+    await expect(byakugan.locator('.bk-tree-count')).toHaveText('4');
   });
 });
 
@@ -243,10 +243,10 @@ test.describe('API', () => {
     const res = await request.get('/api/index.json');
     expect(res.ok()).toBeTruthy();
     const idx = await res.json();
-    expect(idx.pageCount).toBe(3);
+    expect(idx.pageCount).toBe(4);
     const byakugan = idx.projects.find((p: any) => p.name === 'byakugan');
     expect(byakugan.pages.map((p: any) => p.title))
-      .toEqual(['Architecture Overview', 'Decision log', 'Internals']);
+      .toEqual(['Architecture Overview', 'Decision log', 'Internals', 'PRD: Markdown Pages']);
   });
 
   test('path traversal is rejected', async ({ request }) => {

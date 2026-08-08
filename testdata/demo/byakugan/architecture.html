@@ -22,9 +22,9 @@
   <p>Coding agents generate architecture docs, ADRs, and PRDs as they work.
   Those files pile up in a folder and go unread because nothing presents them.
   Byakugan is the missing presenter: point it at the folder and every
-  subfolder becomes a project, every HTML file a page, everything indexed for
-  instant search. It is built for exactly one use case and refuses to grow
-  into a CMS, wiki, or static-site generator.</p>
+  subfolder becomes a project, every HTML or Markdown file a page, everything
+  indexed for instant search. It is built for exactly one use case and
+  refuses to grow into a CMS, wiki, or static-site generator.</p>
   <p>Two constraints shape every decision below: <strong>zero configuration</strong>
   (<code>byakugan &lt;folder&gt;</code> must always work) and <strong>zero
   dependencies at the edge</strong> — no build step, no CDN, no database, one
@@ -33,11 +33,12 @@
 
 <section>
   <h2>System overview</h2>
-  <p>Five small Go packages sit between two actors: the agent (or engineer)
-  writing HTML into the docs folder, and the browser reading it. The whole
-  runtime is ~1,100 lines of Go plus three embedded UI assets. This page maps
-  the shape; <a href="internals.html">Internals</a> traces the same
-  system at code level, file by file.</p>
+  <p>Six small internal packages plus <code>main</code> sit between two
+  actors: the agent (or engineer) writing HTML or Markdown into the docs
+  folder, and the browser reading it. The whole runtime is ~1,350 lines of Go
+  plus six embedded UI assets. This page maps the shape;
+  <a href="internals.html">Internals</a> traces the same system at code
+  level, file by file.</p>
 
   <figure class="plate">
     <svg class="diagram" viewBox="0 0 780 400" role="img" aria-label="Byakugan component diagram">
@@ -132,6 +133,7 @@
       <tr><td><code>internal/server</code></td><td>routes, SSE fan-out, overlay injection</td><td>stdlib <code>net/http</code> only</td></tr>
       <tr><td><code>internal/index</code></td><td>scan, extract, snapshot</td><td>immutable snapshots swapped atomically</td></tr>
       <tr><td><code>internal/watcher</code></td><td>recursive fs watching</td><td>300 ms debounce: a burst re-indexes once</td></tr>
+      <tr><td><code>internal/markdown</code></td><td>renders <code>.md</code> into the doc skeleton</td><td>goldmark + GFM, scoped hard: never a static-site generator</td></tr>
       <tr><td><code>internal/agentkit</code></td><td><code>style</code> · <code>rules</code> · <code>template</code> assets</td><td>the design system ships inside the binary</td></tr>
       <tr><td><code>internal/selfupdate</code></td><td>release check + <code>upgrade</code></td><td>non-blocking notice, never auto-installs</td></tr>
     </tbody>
@@ -140,10 +142,13 @@
 
 <section>
   <h2>The serving pipeline</h2>
-  <p>Four routes cover everything. <code>/api/index.json</code> returns the
+  <p>Five routes cover everything. <code>/api/index.json</code> returns the
   current snapshot; <code>/events</code> holds an SSE stream open;
-  <code>/__byakugan/*</code> serves the embedded UI; and <code>/</code> is the
-  catch-all page handler shown below.</p>
+  <code>/__byakugan/*</code> serves the embedded UI;
+  <code>/__byakugan/doc.css</code> ships the doc design system from inside the
+  binary (so Markdown renders styled in folders with no
+  <code>_shared/</code>); and <code>/</code> is the catch-all page handler
+  shown below.</p>
 
   <figure class="plate">
     <svg class="diagram" viewBox="0 0 780 250" role="img" aria-label="Request pipeline for a document page">
@@ -185,7 +190,7 @@
       <text class="d-label" x="24" y="160">branches from Resolve:</text>
       <text class="d-label" x="24" y="180">“/” or bare directory → embedded landing (scopes itself from the URL)</text>
       <text class="d-label" x="24" y="200">directory with index.html → that file, injected</text>
-      <text class="d-label" x="24" y="220">non-HTML file → http.ServeFile, untouched</text>
+      <text class="d-label" x="24" y="220">*.md → goldmark → doc skeleton → injected · anything else → http.ServeFile, untouched</text>
     </svg>
     <figcaption><b>Fig 2</b> — every HTML page leaves the server with one extra
     line: a deferred script tag that renders the overlay. The file on disk is
@@ -209,8 +214,11 @@
   <h2>Index and search</h2>
   <p>On start (and on every settled change) the index walks the root, parses
   each HTML file, and extracts the <code>&lt;title&gt;</code>, the headings,
-  and the first 2,000 characters of visible text. The result is an immutable
-  snapshot swapped in atomically — readers never lock against the scanner.</p>
+  and the first 2,000 characters of visible text. Markdown files take one
+  extra step — rendered to HTML first, then fed through the same extractor —
+  so both kinds of page rank identically in search. The result is an
+  immutable snapshot swapped in atomically — readers never lock against the
+  scanner.</p>
   <p>Search runs <em>in the browser</em>: the full snapshot ships as one JSON
   payload and <code>search.js</code> ranks matches as you type. For the
   hundreds-of-pages corpora Byakugan targets, that is faster than any
