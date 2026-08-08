@@ -18,7 +18,7 @@ test.describe('landing page', () => {
     await page.goto('/');
     await page.locator('#bk-search').fill('internals');
     const hit = page.locator('.bk-hit').first();
-    await expect(hit).toContainText('Byakugan Internals');
+    await expect(hit).toContainText('Internals');
     await expect(hit.locator('mark').first()).toBeVisible();
     await expect(page.locator('#bk-projects')).toBeHidden();
   });
@@ -42,7 +42,7 @@ test.describe('landing page', () => {
 test.describe('document pages', () => {
   test('serves the original document with the overlay injected', async ({ page }) => {
     await page.goto('/byakugan/architecture.html');
-    await expect(page.getByRole('heading', { name: /Byakugan Architecture/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Architecture Overview/ })).toBeVisible();
     await expect(page.locator('#bk-fab')).toBeVisible();
   });
 
@@ -51,10 +51,10 @@ test.describe('document pages', () => {
     await page.locator('#bk-fab').click();
     const drawer = page.locator('#bk-drawer');
     await expect(drawer).toHaveClass(/bk-open/);
-    await expect(drawer.locator('.bk-tree a.bk-current')).toContainText('Byakugan Architecture');
+    await expect(drawer.locator('.bk-tree a.bk-current')).toContainText('Architecture Overview');
     // First page of the dossier: nothing before it, internals after it.
     await expect(drawer.locator('#bk-prev')).toHaveAttribute('aria-disabled', 'true');
-    await expect(drawer.locator('#bk-next')).toContainText('Byakugan Internals');
+    await expect(drawer.locator('#bk-next')).toContainText('Internals');
     await drawer.locator('#bk-next').click();
     await expect(page).toHaveURL(/internals\.html$/);
   });
@@ -74,7 +74,7 @@ test.describe('document pages', () => {
     await page.locator('#bk-drawer input').fill('dispatch');
     const links = page.locator('#bk-drawer .bk-tree a');
     await expect(links).toHaveCount(1);
-    await expect(links.first()).toContainText('Byakugan Internals');
+    await expect(links.first()).toContainText('Internals');
   });
 });
 
@@ -177,7 +177,7 @@ test.describe('back button', () => {
     await expect(page).toHaveURL(/byakugan\/internals\.html$/);
     await page.goBack();
     await expect(page.locator('#bk-search')).toHaveValue('internals');
-    await expect(page.locator('.bk-hit').first()).toContainText('Byakugan Internals');
+    await expect(page.locator('.bk-hit').first()).toContainText('Internals');
     await expect(page.locator('#bk-projects')).toBeHidden();
   });
 
@@ -215,7 +215,7 @@ test.describe('API', () => {
     expect(idx.pageCount).toBe(2);
     const byakugan = idx.projects.find((p: any) => p.name === 'byakugan');
     expect(byakugan.pages.map((p: any) => p.title))
-      .toEqual(['Byakugan Architecture', 'Byakugan Internals']);
+      .toEqual(['Architecture Overview', 'Internals']);
   });
 
   test('path traversal is rejected', async ({ request }) => {

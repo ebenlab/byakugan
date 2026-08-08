@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Byakugan Architecture</title>
+<title>Architecture Overview</title>
 <link rel="stylesheet" href="../_shared/doc.css">
 </head>
 <body class="doc">
 
 <header class="doc-head">
   <p class="kicker">byakugan · architecture · <span class="badge badge--accepted">current</span> · 2026-08-08</p>
-  <h1>Byakugan Architecture</h1>
+  <h1>Architecture Overview</h1>
   <p class="lede">One static Go binary that turns a folder of agent-written HTML
   into a navigable, searchable, live-reloading site — this page is served by the
   system it describes.</p>
@@ -36,7 +36,7 @@
   <p>Five small Go packages sit between two actors: the agent (or engineer)
   writing HTML into the docs folder, and the browser reading it. The whole
   runtime is ~1,100 lines of Go plus three embedded UI assets. This page maps
-  the shape; <a href="internals.html">Byakugan Internals</a> traces the same
+  the shape; <a href="internals.html">Internals</a> traces the same
   system at code level, file by file.</p>
 
   <figure class="plate">
