@@ -4,7 +4,6 @@
 package index
 
 import (
-	"bytes"
 	"io"
 	"os"
 	"path/filepath"
@@ -15,7 +14,6 @@ import (
 
 	"golang.org/x/net/html"
 
-	"github.com/ebenlab/byakugan/internal/markdown"
 	"github.com/ebenlab/byakugan/internal/scanrules"
 )
 
@@ -97,8 +95,7 @@ func (ix *Index) Rebuild() error {
 			return nil
 		}
 		ext := strings.ToLower(filepath.Ext(name))
-		isHTML := ext == ".html" || ext == ".htm"
-		if !isHTML && ext != ".md" {
+		if ext != ".html" && ext != ".htm" {
 			return nil
 		}
 		rel, err := filepath.Rel(ix.root, path)
@@ -112,19 +109,9 @@ func (ix *Index) Rebuild() error {
 		if info, err := d.Info(); err == nil {
 			page.ModTime = info.ModTime()
 		}
-		if isHTML {
-			if f, err := os.Open(path); err == nil {
-				page.Title, page.Headings, page.Text = extract(f)
-				f.Close()
-			}
-		} else if src, err := os.ReadFile(path); err == nil {
-			// Markdown pages index exactly like HTML ones: render the body,
-			// then reuse the same extractor on the fragment.
-			meta, body := markdown.Parse(src)
-			if frag, err := markdown.ToHTML(body); err == nil {
-				_, page.Headings, page.Text = extract(bytes.NewReader(frag))
-			}
-			page.Title = markdown.Title(meta, body, strings.TrimSuffix(name, ext))
+		if f, err := os.Open(path); err == nil {
+			page.Title, page.Headings, page.Text = extract(f)
+			f.Close()
 		}
 		if page.Title == "" {
 			page.Title = strings.TrimSuffix(name, filepath.Ext(name))

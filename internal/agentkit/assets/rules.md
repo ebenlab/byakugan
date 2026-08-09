@@ -158,15 +158,13 @@ Not every figure needs SVG. Two lighter forms are part of the system, and
 both render as fast as plain text because they are plain text — no
 libraries, no highlighter, nothing to parse or execute:
 
-- **ASCII diagrams** — `<pre class="ascii">` inside a `.plate` (HTML) or a
-  plain fenced block (Markdown). Use them for quick topologies, request
+- **ASCII diagrams** — `<pre class="ascii">` inside a `.plate`. Use them for quick topologies, request
   paths, and anything reviewed in diffs; keep the `.d-*` SVG grammar for
   figures that earn the polish. Rules: lines ≤ 78 columns (the container
   scrolls sideways rather than wraps), Unicode box-drawing characters
   (`─ │ ┌ ┐ └ ┘ ├ ▶`) over `+--+`, solid arrows for synchronous calls and
   `─ ─ ▶` dashed for async — the same conventions as the SVG grammar.
-- **Code snippets** — a bare `<pre><code>` block (HTML) or fenced block
-  (Markdown). Quote real code, short and load-bearing: the invariant, the
+- **Code snippets** — a bare `<pre><code>` block. Quote real code, short and load-bearing: the invariant, the
   contract, the one function that explains the section — never page-long
   listings. A leading comment line naming the file (`// server.go — …`)
   replaces a caption. There is deliberately no syntax highlighter; do not
