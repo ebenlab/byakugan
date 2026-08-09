@@ -54,6 +54,13 @@ byakugan <subcommand>
 | `--no-update-check` | `false` | Disable the startup check for a newer release |
 | `--version` | | Print version and exit |
 
+### Environment variables
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `BYAKUGAN_MAX_DEPTH` | `8` | Maximum folder-nesting depth scanned and watched; directories deeper than this below the root are ignored (also caps kernel watch usage on large trees) |
+| `BYAKUGAN_NO_UPDATE_CHECK` | | Any non-empty value disables the startup release check |
+
 ### Subcommands
 
 | Subcommand | Description |

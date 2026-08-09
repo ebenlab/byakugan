@@ -16,10 +16,12 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/ebenlab/byakugan/internal/agentkit"
 	"github.com/ebenlab/byakugan/internal/index"
 	"github.com/ebenlab/byakugan/internal/markdown"
+	"github.com/ebenlab/byakugan/internal/scanrules"
 )
 
 //go:embed assets
@@ -60,9 +62,11 @@ func New(idx *index.Index, version string) *Server {
 	return s
 }
 
-// ListenAndServe blocks serving HTTP on addr.
+// ListenAndServe blocks serving HTTP on addr. The header timeout guards the
+// listener against stalled connections (relevant once bound to 0.0.0.0).
 func (s *Server) ListenAndServe(addr string) error {
-	return http.ListenAndServe(addr, s.mux)
+	srv := &http.Server{Addr: addr, Handler: s.mux, ReadHeaderTimeout: 5 * time.Second}
+	return srv.ListenAndServe()
 }
 
 // ServeHTTP makes Server usable directly in tests via httptest.
@@ -198,11 +202,7 @@ func (s *Server) serveMarkdownFile(w http.ResponseWriter, fullPath, urlPath stri
 		http.Error(w, "unreadable file", http.StatusInternalServerError)
 		return
 	}
-	rel := strings.TrimPrefix(urlPath, "/")
-	project := ""
-	if i := strings.Index(rel, "/"); i >= 0 {
-		project = rel[:i]
-	}
+	project := scanrules.ProjectOf(strings.TrimPrefix(urlPath, "/"))
 	name := strings.TrimSuffix(filepath.Base(fullPath), filepath.Ext(fullPath))
 	page, err := markdown.Page(src, name, project)
 	if err != nil {

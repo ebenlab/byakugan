@@ -6,10 +6,11 @@ package watcher
 import (
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
+
+	"github.com/ebenlab/byakugan/internal/scanrules"
 )
 
 // debounce is how long the tree must stay quiet before onChange fires.
@@ -17,11 +18,15 @@ const debounce = 300 * time.Millisecond
 
 // Watcher owns the fsnotify instance and its event loop.
 type Watcher struct {
-	fs   *fsnotify.Watcher
-	done chan struct{}
+	fs       *fsnotify.Watcher
+	root     string
+	maxDepth int
+	done     chan struct{}
 }
 
-// New starts watching root and all its subdirectories. onChange runs on a
+// New starts watching root and all its subdirectories, honoring the same
+// skip and depth rules as the indexer (scanrules) — the depth limit also
+// bounds how many kernel watches the tree consumes. onChange runs on a
 // background goroutine after events settle. Newly created directories are
 // added to the watch automatically.
 func New(root string, onChange func()) (*Watcher, error) {
@@ -29,7 +34,12 @@ func New(root string, onChange func()) (*Watcher, error) {
 	if err != nil {
 		return nil, err
 	}
-	w := &Watcher{fs: fs, done: make(chan struct{})}
+	w := &Watcher{
+		fs:       fs,
+		root:     root,
+		maxDepth: scanrules.MaxDepth(),
+		done:     make(chan struct{}),
+	}
 	if err := w.addTree(root); err != nil {
 		fs.Close()
 		return nil, err
@@ -44,17 +54,22 @@ func (w *Watcher) Close() error {
 	return w.fs.Close()
 }
 
-func (w *Watcher) addTree(root string) error {
-	return filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
+// addTree registers watches on from and every eligible directory below it.
+// Depth is always measured from the watcher's root, so directories that
+// appear at runtime obey the same limit as the initial walk.
+func (w *Watcher) addTree(from string) error {
+	return filepath.WalkDir(from, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return nil
 		}
 		if !d.IsDir() {
 			return nil
 		}
-		name := d.Name()
-		if path != root && (strings.HasPrefix(name, ".") || name == "node_modules") {
-			return filepath.SkipDir
+		if path != w.root {
+			rel, err := filepath.Rel(w.root, path)
+			if err != nil || scanrules.SkipName(d.Name()) || scanrules.TooDeep(rel, w.maxDepth) {
+				return filepath.SkipDir
+			}
 		}
 		return w.fs.Add(path)
 	})

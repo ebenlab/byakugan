@@ -5,6 +5,7 @@ package index
 
 import (
 	"bytes"
+	"io"
 	"os"
 	"path/filepath"
 	"sort"
@@ -15,6 +16,7 @@ import (
 	"golang.org/x/net/html"
 
 	"github.com/ebenlab/byakugan/internal/markdown"
+	"github.com/ebenlab/byakugan/internal/scanrules"
 )
 
 // maxTextLen caps how much visible text per page is shipped to the search
@@ -77,6 +79,7 @@ func (ix *Index) Current() *Snapshot {
 // Rebuild rescans the root and atomically replaces the snapshot.
 func (ix *Index) Rebuild() error {
 	byProject := map[string][]Page{}
+	maxDepth := scanrules.MaxDepth()
 
 	err := filepath.WalkDir(ix.root, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
@@ -84,7 +87,11 @@ func (ix *Index) Rebuild() error {
 		}
 		name := d.Name()
 		if d.IsDir() {
-			if path != ix.root && (strings.HasPrefix(name, ".") || name == "node_modules") {
+			if path == ix.root {
+				return nil
+			}
+			rel, err := filepath.Rel(ix.root, path)
+			if err != nil || scanrules.SkipName(name) || scanrules.TooDeep(rel, maxDepth) {
 				return filepath.SkipDir
 			}
 			return nil
@@ -99,11 +106,7 @@ func (ix *Index) Rebuild() error {
 			return nil
 		}
 		rel = filepath.ToSlash(rel)
-
-		project := ""
-		if i := strings.Index(rel, "/"); i >= 0 {
-			project = rel[:i]
-		}
+		project := scanrules.ProjectOf(rel)
 
 		page := Page{Path: rel, Project: project}
 		if info, err := d.Info(); err == nil {
@@ -162,7 +165,7 @@ func (ix *Index) Rebuild() error {
 // extract pulls the title, headings, and a bounded amount of visible text
 // out of an HTML document. It tolerates malformed HTML — x/net/html parses
 // anything — and never returns an error; missing pieces come back empty.
-func extract(r interface{ Read([]byte) (int, error) }) (title string, headings []string, text string) {
+func extract(r io.Reader) (title string, headings []string, text string) {
 	doc, err := html.Parse(r)
 	if err != nil {
 		return "", nil, ""
