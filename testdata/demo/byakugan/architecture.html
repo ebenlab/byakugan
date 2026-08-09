@@ -11,19 +11,21 @@
 <header class="doc-head">
   <p class="kicker">byakugan · architecture · <span class="badge badge--accepted">current</span> · 2026-08-08</p>
   <h1>Architecture Overview</h1>
-  <p class="lede">One static Go binary that turns a folder of agent-written HTML
-  into a navigable, searchable, live-reloading site — this page is served by the
-  system it describes.</p>
+  <p class="lede">One static Go binary that turns a folder of HTML architecture
+  records — ADRs above all — into a navigable, searchable, live-reloading
+  dossier. This page is served by the system it describes.</p>
 </header>
 
 <main>
 <section>
   <h2>Context</h2>
-  <p>Coding agents generate architecture docs, ADRs, and PRDs as they work.
-  Those files pile up in a folder and go unread because nothing presents them.
-  Byakugan is the missing presenter: point it at the folder and every
-  subfolder becomes a project, every HTML file a page, everything indexed for
-  instant search. It is built for exactly one use case and
+  <p>Architecture decisions accumulate as ADRs and design docs while agents
+  and engineers work — then go unread, because nothing presents them.
+  Byakugan is the missing presenter, built architecture-first: point it at
+  the folder and every subfolder becomes a project, every ADR a page,
+  everything indexed so a decision made months ago is one search away. Other
+  HTML that lands in the folder (PRDs, runbooks, notes) is served just as
+  well, but architecture in plain HTML is the center of gravity. The tool
   refuses to grow into a CMS, wiki, or static-site generator.</p>
   <p>Two constraints shape every decision below: <strong>zero configuration</strong>
   (<code>byakugan &lt;folder&gt;</code> must always work) and <strong>zero

@@ -4,7 +4,8 @@ Thanks for helping architects see everything.
 
 ## Ground rules
 
-- **Scope**: Byakugan is a tiny live server for folders of HTML docs. Features
+- **Scope**: Byakugan is a tiny live server for folders of HTML architecture
+  records — ADRs first, other docs incidentally. Features
   that turn it into a CMS, wiki, or SSG are out of scope — say no early.
 - **Dependencies**: stdlib first. New modules need an issue + justification.
 - **Compatibility**: `byakugan <folder>` with zero config must always work,

@@ -1,8 +1,9 @@
 # Byakugan — agent guidelines
 
-Byakugan is a single-binary Go live server for agent-generated architecture
-docs and PRDs. Read this before changing anything; it is the contract every
-agent and contributor works under.
+Byakugan is a single-binary Go live server for architecture records in
+HTML — ADRs first; other agent-generated docs (PRDs, overviews) ride along.
+Read this before changing anything; it is the contract every agent and
+contributor works under.
 
 ## Commands
 

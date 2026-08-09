@@ -1,5 +1,7 @@
-// Command byakugan serves a folder of agent-generated architecture and PRD
-// HTML documents as a navigable, searchable site.
+// Command byakugan serves a folder of HTML architecture records — ADRs,
+// system overviews, design decisions — as a navigable, searchable site.
+// Other HTML docs (PRDs, runbooks) are served just as well, but the tool is
+// built architecture-first.
 //
 // Usage:
 //
@@ -119,7 +121,7 @@ func newServeFlags(w io.Writer) (*flag.FlagSet, *serveOptions) {
 
 // printUsage writes the full usage text — serve flags plus subcommands — to w.
 func printUsage(w io.Writer, fs *flag.FlagSet) {
-	fmt.Fprintf(w, `byakugan — a tiny live server for architecture docs and PRDs
+	fmt.Fprintf(w, `byakugan — a tiny live server for architecture records (ADRs) in HTML
 
 Usage:
   byakugan [flags] [folder]   serve a docs folder (default ".")

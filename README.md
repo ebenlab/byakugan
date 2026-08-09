@@ -6,15 +6,16 @@
   Byakugan
 </h1>
 
-**A tiny live server for architecture docs and PRDs.**
+**The architecture record server.** A tiny live server that turns a folder
+of HTML architecture docs — ADRs, system overviews, design decisions — into
+a navigable, searchable dossier.
 
-Byakugan serves a folder of HTML documents — the kind coding agents generate
-during the software development process — as a navigable, searchable site.
-Point it at a docs folder and every subfolder becomes a project, every HTML
-file becomes a page, and everything is indexed for instant search.
-
-Built for one use case: letting architects and engineers navigate project
-architecture and the decisions made over time by agents and other devs.
+Architecture is the center of gravity: decisions accumulate as plain HTML
+files (the kind coding agents generate as they work), every subfolder
+becomes a project, every ADR becomes a page, and everything is indexed so a
+decision made months ago is one search away. It happily serves whatever
+other HTML lands in the folder — PRDs, runbooks, notes — but it is built,
+first and foremost, for architects navigating decisions over time.
 
 ## Install
 
